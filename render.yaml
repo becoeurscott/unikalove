@@ -58,6 +58,14 @@ services:
         sync: false
       - key: STRIPE_PRICE_PREMIUM_PLUS
         sync: false
+      - key: MONEROO_SECRET_KEY
+        sync: false
+      - key: MONEROO_WEBHOOK_SECRET
+        sync: false
+      - key: MONEROO_BASE_URL
+        value: https://api.moneroo.io
+      - key: INTERNAL_CRON_TOKEN
+        sync: false
 
   # --- Redis (caches, AI budgets). The app degrades gracefully without it. ----
   - type: keyvalue

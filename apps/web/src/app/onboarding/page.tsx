@@ -65,7 +65,18 @@ export default function OnboardingPage() {
         await api('/profiles/me/interests', { method: 'PUT', body: { slugs: selected } });
       }
       await api('/profiles/me/preferences', { method: 'PUT', body: prefs });
-      router.push('/');
+      // Finish on checkout when the user arrived from a paid-plan CTA.
+      let next = '/';
+      try {
+        const plan = sessionStorage.getItem('unika_intended_plan');
+        if (plan) {
+          sessionStorage.removeItem('unika_intended_plan');
+          next = '/premium';
+        }
+      } catch {
+        /* storage unavailable */
+      }
+      router.push(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
       setBusy(false);

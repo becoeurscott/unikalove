@@ -13,6 +13,7 @@ const PLANS = [
     period: '',
     features: ['20 likes par jour', 'Sélection du jour', 'Messagerie avec vos matchs', 'Profil vérifié'],
     cta: 'Commencer',
+    plan: null,
     featured: false,
   },
   {
@@ -27,6 +28,7 @@ const PLANS = [
       'Coach IA',
     ],
     cta: 'Passer Premium',
+    plan: 'PREMIUM',
     featured: true,
   },
   {
@@ -41,6 +43,7 @@ const PLANS = [
       'Support prioritaire',
     ],
     cta: 'Passer Premium+',
+    plan: 'PREMIUM_PLUS',
     featured: false,
   },
 ];
@@ -54,7 +57,7 @@ export function Pricing() {
             Des tarifs pensés <span className="text-brand">pour l&apos;Afrique</span>
           </h2>
           <p className="mt-3 text-gray-500">
-            Payez par carte aujourd&apos;hui — Mobile Money (MTN MoMo, Orange Money) bientôt.
+            Payez en Mobile Money (Wave, Orange Money, MTN MoMo) ou par carte bancaire.
           </p>
         </Reveal>
         <div className="grid gap-8 md:grid-cols-3">
@@ -92,7 +95,11 @@ export function Pricing() {
                   ))}
                 </ul>
                 <a
-                  href={`${APP}/register`}
+                  href={
+                    p.plan
+                      ? `${APP}/register?plan=${p.plan}&period=30`
+                      : `${APP}/register`
+                  }
                   className={`rounded-xl py-2.5 text-center text-sm font-semibold transition ${
                     p.featured
                       ? 'bg-white text-brand hover:opacity-90'

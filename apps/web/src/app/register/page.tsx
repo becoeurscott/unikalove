@@ -27,6 +27,16 @@ export default function RegisterPage() {
     setBusy(true);
     try {
       await register(email, password);
+      // The landing CTAs pass ?plan=...; stash it so onboarding can finish on
+      // /premium instead of dropping the user on the dashboard.
+      try {
+        const plan = new URLSearchParams(window.location.search).get('plan');
+        if (plan === 'PREMIUM' || plan === 'PREMIUM_PLUS') {
+          sessionStorage.setItem('unika_intended_plan', plan);
+        }
+      } catch {
+        /* storage unavailable — just skip the upsell redirect */
+      }
       router.push('/onboarding');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Inscription impossible');

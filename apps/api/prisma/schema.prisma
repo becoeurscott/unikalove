@@ -100,6 +100,7 @@ model User {
   plan            Plan       @default(FREE)
   status          UserStatus @default(ACTIVE)
   emailVerifiedAt DateTime?
+  planExpiresAt   DateTime?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   deletedAt       DateTime?
@@ -122,6 +123,8 @@ model User {
   notifications       Notification[]
   auditLogs           AdminAuditLog[]
   subscriptions       Subscription[]
+  payments            Payment[]
+  credits             CreditLedger[]
 }
 
 model Profile {
@@ -338,8 +341,91 @@ model Subscription {
   providerRef      String?
   status           SubscriptionStatus @default(ACTIVE)
   currentPeriodEnd DateTime?
+  amount           Int?
+  currency         String             @default("XOF")
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 
+  // Idempotency for webhook retries. Postgres treats NULLs as distinct, so
+  // rows without a providerRef (legacy/manual) are unaffected.
+  @@unique([provider, providerRef])
   @@index([userId, status])
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentKind {
+  SUBSCRIPTION
+  CREDIT_PACK
+}
+
+enum CreditType {
+  BOOST
+  SUPER_LIKE
+  SPOTLIGHT
+}
+
+/// One row per payment attempt, every provider. Source of truth for revenue.
+model Payment {
+  id            String        @id @default(uuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  kind          PaymentKind
+  provider      String
+  /// Provider-side id (Moneroo py_..., Stripe session/subscription id).
+  providerRef   String?
+  /// Smallest unit. XOF/XAF are zero-decimal — whole francs, never x100.
+  amount        Int
+  currency      String        @default("XOF")
+  status        PaymentStatus @default(PENDING)
+  plan          Plan?
+  sku           String?
+  /// Entitlement window bought by a one-shot payment (30/90/180/365).
+  periodDays    Int?
+  failureReason String?
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  completedAt   DateTime?
+
+  credits CreditLedger[]
+
+  @@unique([provider, providerRef])
+  @@index([userId, status])
+  @@index([status, createdAt])
+}
+
+/// Webhook dedup. Providers retry; fulfilment must happen exactly once.
+model ProcessedWebhookEvent {
+  id          String   @id @default(uuid())
+  provider    String
+  eventId     String
+  processedAt DateTime @default(now())
+
+  @@unique([provider, eventId])
+  @@index([processedAt])
+}
+
+/// Append-only credit ledger. Balance is SUM(delta) per (userId, type) —
+/// never a mutable counter, so a double-grant is auditable rather than silent.
+model CreditLedger {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  type      CreditType
+  /// +N on grant, -1 on spend.
+  delta     Int
+  /// "purchase" | "plan_grant" | "spend:<action>"
+  reason    String
+  paymentId String?
+  payment   Payment?   @relation(fields: [paymentId], references: [id])
+  createdAt DateTime   @default(now())
+
+  @@index([userId, type])
+  @@index([userId, type, createdAt])
 }

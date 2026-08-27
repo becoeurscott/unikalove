@@ -1,0 +1,56 @@
+# Renewal reminders + entitlement expiry.
+#
+# Mobile money cannot auto-renew, so paid plans carry a hard expiry. Expired
+# users are downgraded lazily on their next authenticated request, but someone
+# who stops opening the app never triggers that path — and reminders have to go
+# out *before* they lapse. Render's free tier sleeps after ~15 min idle, so an
+# in-process cron would not fire reliably; this drives it from outside.
+#
+# Setup: add repo secrets API_URL (e.g. https://unikalove-api.onrender.com)
+# and INTERNAL_CRON_TOKEN (must match the API's env var).
+name: Payments sweep
+
+on:
+  schedule:
+    # 06:00 UTC daily — morning in West Africa (UTC+0/+1).
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call sweep endpoint
+        env:
+          API_URL: ${{ secrets.API_URL }}
+          INTERNAL_CRON_TOKEN: ${{ secrets.INTERNAL_CRON_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${API_URL:-}" ] || [ -z "${INTERNAL_CRON_TOKEN:-}" ]; then
+            echo "::error::API_URL and INTERNAL_CRON_TOKEN repo secrets are required"
+            exit 1
+          fi
+
+          # Render free tier cold-starts in 30-60s, so retry rather than fail.
+          for attempt in 1 2 3 4 5; do
+            code=$(curl -sS -o /tmp/sweep.json -w '%{http_code}' \
+              --max-time 120 \
+              -X POST "$API_URL/api/v1/payments/internal/sweep" \
+              -H "x-internal-token: $INTERNAL_CRON_TOKEN" \
+              -H 'content-length: 0' || echo 000)
+            echo "attempt $attempt -> HTTP $code"
+            if [ "$code" = "200" ]; then
+              cat /tmp/sweep.json
+              exit 0
+            fi
+            # 403 means the token is wrong; retrying will not help.
+            if [ "$code" = "403" ]; then
+              echo "::error::Sweep rejected (403) — INTERNAL_CRON_TOKEN mismatch"
+              exit 1
+            fi
+            sleep $((attempt * 15))
+          done
+
+          echo "::error::Sweep failed after 5 attempts"
+          cat /tmp/sweep.json || true
+          exit 1

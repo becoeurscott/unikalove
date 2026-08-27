@@ -3,14 +3,19 @@ import { ConfigService } from '@nestjs/config';
 import { Plan } from '@prisma/client';
 import Stripe from 'stripe';
 import {
+  CheckoutRequest,
   CheckoutResult,
+  PaymentEvent,
   PaymentProvider,
-  SubscriptionEvent,
 } from './payment-provider.interface';
 
 @Injectable()
 export class StripeProvider implements PaymentProvider {
   readonly name = 'stripe';
+  readonly label = 'Carte bancaire';
+  readonly signatureHeader = 'stripe-signature';
+  readonly supportsRecurring = true;
+  readonly currencies = ['EUR', 'USD', 'XOF', 'XAF'];
   private readonly logger = new Logger(StripeProvider.name);
   private readonly stripe: Stripe | null;
   private readonly webhookSecret?: string;
@@ -19,7 +24,9 @@ export class StripeProvider implements PaymentProvider {
 
   constructor(private readonly config: ConfigService) {
     const key = config.get<string>('STRIPE_SECRET_KEY');
-    this.stripe = key ? new Stripe(key) : null;
+    // Pinned explicitly: the SDK has its own default, but pinning here means an
+    // SDK bump can never silently change the wire format under us.
+    this.stripe = key ? new Stripe(key, { apiVersion: '2026-08-26.dahlia' }) : null;
     this.webhookSecret = config.get<string>('STRIPE_WEBHOOK_SECRET');
     this.appUrl = config.get<string>('APP_URL') ?? 'http://localhost:3000';
     this.prices = {
@@ -44,7 +51,9 @@ export class StripeProvider implements PaymentProvider {
     return this.stripe;
   }
 
-  async createCheckout(userId: string, email: string, plan: Plan): Promise<CheckoutResult> {
+  async createCheckout(req: CheckoutRequest): Promise<CheckoutResult> {
+    const { userId, email, plan } = req;
+    if (!plan) throw new NotImplementedException('Plan requis pour Stripe');
     const price = this.prices[plan];
     if (!price) {
       throw new NotImplementedException(`Aucun tarif Stripe configuré pour ${plan}`);
@@ -55,20 +64,20 @@ export class StripeProvider implements PaymentProvider {
       customer_email: email,
       // client_reference_id ties the Stripe session back to our user.
       client_reference_id: userId,
-      metadata: { userId, plan },
-      subscription_data: { metadata: { userId, plan } },
+      metadata: { userId, plan, paymentId: req.paymentId },
+      subscription_data: { metadata: { userId, plan, paymentId: req.paymentId } },
       success_url: `${this.appUrl}/settings?checkout=success`,
       cancel_url: `${this.appUrl}/settings?checkout=cancel`,
     });
     if (!session.url) throw new Error('Stripe did not return a checkout URL');
-    return { url: session.url };
+    return { url: session.url, providerRef: String(session.subscription ?? session.id) };
   }
 
   async cancelSubscription(providerRef: string): Promise<void> {
     await this.client().subscriptions.update(providerRef, { cancel_at_period_end: true });
   }
 
-  async handleWebhook(payload: Buffer, signature: string): Promise<SubscriptionEvent[]> {
+  async handleWebhook(payload: Buffer, signature: string): Promise<PaymentEvent[]> {
     if (!this.webhookSecret) {
       throw new NotImplementedException('STRIPE_WEBHOOK_SECRET manquant');
     }
@@ -86,12 +95,15 @@ export class StripeProvider implements PaymentProvider {
         if (!userId || !plan) return [];
         return [
           {
-            type: 'activated',
+            eventId: event.id,
+            type: 'completed',
             userId,
             plan,
+            kind: 'SUBSCRIPTION',
+            paymentId: s.metadata?.paymentId,
             providerRef: String(s.subscription ?? s.id),
             amount: s.amount_total ?? undefined,
-            currency: s.currency ?? undefined,
+            currency: s.currency?.toUpperCase(),
           },
         ];
       }
@@ -103,7 +115,7 @@ export class StripeProvider implements PaymentProvider {
         if (!userId) return [];
         const periodEnd = (sub as unknown as { current_period_end?: number })
           .current_period_end;
-        const type =
+        const type: PaymentEvent['type'] =
           event.type === 'customer.subscription.deleted' || sub.status === 'canceled'
             ? 'canceled'
             : sub.status === 'past_due'
@@ -111,9 +123,12 @@ export class StripeProvider implements PaymentProvider {
               : 'updated';
         return [
           {
+            eventId: event.id,
             type,
             userId,
             plan,
+            kind: 'SUBSCRIPTION',
+            paymentId: sub.metadata?.paymentId,
             providerRef: sub.id,
             currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : undefined,
           },

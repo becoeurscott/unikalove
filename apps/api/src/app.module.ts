@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { ConfigModule } from '@nestjs/config';
+import { validateEnv } from './config/env.validation';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -18,6 +19,7 @@ import { SafetyModule } from './modules/safety/safety.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AiModule } from './modules/ai/ai.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { CreditsModule } from './modules/credits/credits.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { MediaModule } from './modules/media/media.module';
@@ -25,8 +27,12 @@ import { MediaModule } from './modules/media/media.module';
 @Module({
   controllers: [AppController],
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+    ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
+    ThrottlerModule.forRoot([
+      { name: 'default', ttl: 60_000, limit: 100 },
+      // Credential endpoints: 8 attempts per minute per IP.
+      { name: 'auth', ttl: 60_000, limit: 8 },
+    ]),
     PrismaModule,
     RedisModule,
     AuthModule,
@@ -39,6 +45,7 @@ import { MediaModule } from './modules/media/media.module';
     AdminModule,
     AiModule,
     PaymentsModule,
+    CreditsModule,
     SubscriptionsModule,
     NotificationsModule,
     MediaModule,

@@ -15,7 +15,7 @@ import {
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
@@ -29,21 +29,18 @@ interface Counts {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout } = useAuth();
   const [upgradeError, setUpgradeError] = useState('');
 
-  /** Redirects to the provider checkout; shows a notice when payments are off. */
-  async function upgrade() {
+  /**
+   * Plan, duration and payment method are chosen on /premium — checkout can no
+   * longer be a single blind POST now that Mobile Money needs a period and a
+   * phone number.
+   */
+  function upgrade() {
     setUpgradeError('');
-    try {
-      const { url } = await api<{ url: string }>('/payments/checkout', {
-        method: 'POST',
-        body: { plan: 'PREMIUM' },
-      });
-      window.location.href = url;
-    } catch {
-      setUpgradeError('Paiements bientôt disponibles');
-    }
+    router.push('/premium');
   }
   const { data: counts } = useQuery({
     queryKey: ['counts'],

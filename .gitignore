@@ -10,3 +10,6 @@ coverage/
 .DS_Store
 Thumbs.db
 .turbo/
+
+# TypeScript incremental build info
+*.tsbuildinfo

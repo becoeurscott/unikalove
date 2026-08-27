@@ -51,12 +51,21 @@ export class AdminService {
 
     const matchRows = await this.prisma.match.groupBy({ by: ['status'], _count: { _all: true } });
 
+    // Collected revenue, in whole XOF francs (zero-decimal currency).
+    const revenueRows = await this.prisma.payment.groupBy({
+      by: ['currency'],
+      where: { status: 'COMPLETED' },
+      _sum: { amount: true },
+    });
+    const revenueXof = revenueRows.find((r) => r.currency === 'XOF')?._sum.amount ?? 0;
+
     return {
       totals: {
         users: totalUsers,
         matches: totalMatches,
         conversations: totalConversations,
-        revenue: 0, // lands with the payments provider in Phase 5
+        revenue: revenueXof,
+        revenueCurrency: 'XOF',
       },
       lastWeek: { newUsers: usersLastWeek, newMatches: matchesLastWeek },
       userGrowth: growth.map((r) => ({ day: r.day, count: r.count })),
@@ -113,30 +122,64 @@ export class AdminService {
     return events.sort((a, b) => b.at.getTime() - a.at.getTime()).slice(0, 10);
   }
 
-  /** Payments overview: active subscriptions, MRR estimate and recent rows. */
+  /** Payments overview: real collected revenue, active subs and recent rows. */
   async payments() {
-    const [byStatus, recent] = await Promise.all([
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const [byStatus, recent, collected, thisMonth, byProvider] = await Promise.all([
       this.prisma.subscription.groupBy({
         by: ['status', 'plan'],
         _count: { _all: true },
       }),
-      this.prisma.subscription.findMany({
+      this.prisma.payment.findMany({
         orderBy: { createdAt: 'desc' },
         take: 50,
         include: {
           user: { select: { email: true, profile: { select: { displayName: true } } } },
         },
       }),
+      // Actual money in, by currency — never mix XOF and EUR into one number.
+      this.prisma.payment.groupBy({
+        by: ['currency'],
+        where: { status: 'COMPLETED' },
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+      this.prisma.payment.groupBy({
+        by: ['currency'],
+        where: { status: 'COMPLETED', completedAt: { gte: monthStart } },
+        _sum: { amount: true },
+      }),
+      this.prisma.payment.groupBy({
+        by: ['provider', 'status'],
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
     ]);
-    // Placeholder monthly prices in FCFA until Stripe price objects drive this.
-    const MONTHLY: Record<string, number> = { FREE: 0, PREMIUM: 2500, PREMIUM_PLUS: 5000 };
-    const mrr = byStatus
-      .filter((row) => row.status === 'ACTIVE')
-      .reduce((sum, row) => sum + (MONTHLY[row.plan] ?? 0) * row._count._all, 0);
+
     const activeCount = byStatus
       .filter((row) => row.status === 'ACTIVE')
       .reduce((sum, row) => sum + row._count._all, 0);
-    return { mrr, currency: 'XOF', activeCount, byStatus, recent };
+
+    return {
+      activeCount,
+      byStatus,
+      byProvider,
+      revenue: {
+        total: collected.map((r) => ({
+          currency: r.currency,
+          amount: r._sum.amount ?? 0,
+          count: r._count._all,
+        })),
+        thisMonth: thisMonth.map((r) => ({
+          currency: r.currency,
+          amount: r._sum.amount ?? 0,
+        })),
+      },
+      recent,
+    };
   }
 
   async listUsers(search?: string, take = 50) {

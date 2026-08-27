@@ -7,6 +7,7 @@ import {
 import { SwipeType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { CreditsService } from '../credits/credits.service';
 
 const FREE_DAILY_LIKE_LIMIT = 20;
 const LIKE_TYPES: SwipeType[] = ['LIKE', 'SUPERLIKE'];
@@ -16,6 +17,7 @@ export class MatchingService {
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
+    private credits: CreditsService,
   ) {}
 
   async swipe(userId: string, plan: string, targetId: string, type: SwipeType) {
@@ -30,7 +32,14 @@ export class MatchingService {
         where: { actorId: userId, type: { in: LIKE_TYPES }, createdAt: { gte: startOfDay } },
       });
       if (todayLikes >= FREE_DAILY_LIKE_LIMIT) {
-        throw new ForbiddenException('Daily like limit reached — upgrade to Premium');
+        // A purchased SUPER_LIKE credit buys one swipe past the daily cap;
+        // otherwise 403 so the web app can show its upsell.
+        const paid =
+          type === 'SUPERLIKE' &&
+          (await this.credits.trySpend(userId, 'SUPER_LIKE', 'spend:superlike'));
+        if (!paid) {
+          throw new ForbiddenException('Daily like limit reached — upgrade to Premium');
+        }
       }
     }
 

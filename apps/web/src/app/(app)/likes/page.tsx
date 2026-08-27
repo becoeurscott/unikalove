@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { BadgeCheck, Crown } from 'lucide-react';
+import Link from 'next/link';
 import { Avatar } from '@/components/Avatar';
 import { api, ApiError } from '@/lib/api';
 
@@ -46,9 +47,12 @@ export default function LikesPage() {
           <p className="mt-1 text-sm text-gray-500">
             Passez Premium pour voir qui vous a aimé(e) et matcher instantanément.
           </p>
-          <button className="mt-4 rounded-lg bg-brand px-6 py-2 text-sm font-semibold text-white">
+          <Link
+            href="/premium"
+            className="mt-4 inline-block rounded-lg bg-brand px-6 py-2 text-sm font-semibold text-white"
+          >
             Passer Premium
-          </button>
+          </Link>
         </div>
       )}
 
