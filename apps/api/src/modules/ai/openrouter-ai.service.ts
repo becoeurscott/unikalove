@@ -44,7 +44,7 @@ export class OpenRouterAiService implements AiService {
     ];
   }
 
-  async compatibilityScore(profileA: object, profileB: object): Promise<number> {
+  async compatibilityScore(profileA: object, profileB: object): Promise<number | null> {
     const result = await this.client.chatJson<{ score: number }>(
       this.msgs(
         'Évalue la compatibilité entre ces deux profils de rencontre.\n' +
@@ -57,7 +57,7 @@ export class OpenRouterAiService implements AiService {
       120,
     );
     const score = Number(result?.score);
-    if (!Number.isFinite(score)) return this.fallback.compatibilityScore();
+    if (!Number.isFinite(score)) return null;
     return Math.min(1, Math.max(0, score));
   }
 

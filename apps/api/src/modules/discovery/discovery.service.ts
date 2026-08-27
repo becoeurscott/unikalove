@@ -28,28 +28,46 @@ export class DiscoveryService {
     @Inject(AI_SERVICE) private ai: AiService,
   ) {}
 
-  /** Cached AI compatibility for a pair; falls back to the heuristic on failure. */
+  private compatKey(aId: string, bId: string) {
+    return `ai:compat:${[aId, bId].sort().join(':')}`;
+  }
+
+  /**
+   * Cached AI compatibility only — the feed must never wait on the model.
+   * A miss returns null (heuristic-only for this request) and warms the cache
+   * in the background so the next feed load is AI-ranked.
+   */
   private async aiScore(me: any, candidate: Candidate): Promise<number | null> {
-    const key = `ai:compat:${[me.userId, candidate.userId].sort().join(':')}`;
+    const key = this.compatKey(me.userId, candidate.userId);
     const cached = await this.redis.getJson<{ s: number }>(key);
     if (cached) return cached.s;
-    const score = await this.ai.compatibilityScore(
-      {
-        ville: me.city,
-        intention: me.intent,
-        interets: me.interests?.map((i: any) => i.interestId),
-      },
-      {
-        ville: candidate.city,
-        intention: candidate.intent,
-        interets: candidate.interests,
-        age: candidate.age,
-        distanceKm: candidate.distanceKm,
-      },
-    );
-    if (!Number.isFinite(score)) return null;
-    await this.redis.setJson(key, { s: score }, 86_400);
-    return score;
+    void this.warmScore(me, candidate, key);
+    return null;
+  }
+
+  /** Fire-and-forget scoring; only real scores are cached. */
+  private async warmScore(me: any, candidate: Candidate, key: string) {
+    try {
+      const score = await this.ai.compatibilityScore(
+        {
+          ville: me.city,
+          intention: me.intent,
+          interets: me.interests?.map((i: any) => i.interestId),
+        },
+        {
+          ville: candidate.city,
+          intention: candidate.intent,
+          interets: candidate.interests,
+          age: candidate.age,
+          distanceKm: candidate.distanceKm,
+        },
+      );
+      if (score != null && Number.isFinite(score)) {
+        await this.redis.setJson(key, { s: score }, 86_400);
+      }
+    } catch {
+      /* scoring is best-effort */
+    }
   }
 
   /**

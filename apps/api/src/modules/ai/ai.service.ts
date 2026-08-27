@@ -14,8 +14,8 @@ export interface CoachTurn {
  * no OPENROUTER_API_KEY is configured, and whenever a live call fails).
  */
 export interface AiService {
-  /** 0..1 compatibility between two profiles. */
-  compatibilityScore(profileA: object, profileB: object): Promise<number>;
+  /** 0..1 compatibility between two profiles; null when unavailable. */
+  compatibilityScore(profileA: object, profileB: object): Promise<number | null>;
   /** French suggestions to improve one's own profile. */
   profileSuggestions(profile: object): Promise<string[]>;
   /** French icebreakers tailored to both profiles. */
@@ -32,8 +32,8 @@ export const AI_SERVICE = Symbol('AI_SERVICE');
 
 /** Deterministic French fallbacks — used when no API key is set, or a call fails. */
 export class StubAiService implements AiService {
-  async compatibilityScore(): Promise<number> {
-    return 0.5;
+  async compatibilityScore(): Promise<number | null> {
+    return null; // no key configured — callers fall back to the heuristic
   }
 
   async profileSuggestions(): Promise<string[]> {
