@@ -1,0 +1,22 @@
+<svg viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="uk-pink" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E8477F"/>
+      <stop offset="100%" stop-color="#C2255C"/>
+    </linearGradient>
+    <linearGradient id="uk-gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E3B94E"/>
+      <stop offset="100%" stop-color="#A87B14"/>
+    </linearGradient>
+  </defs>
+  <!-- heads -->
+  <circle cx="76" cy="26" r="15" fill="url(#uk-pink)"/>
+  <circle cx="124" cy="22" r="15" fill="url(#uk-gold)"/>
+  <!-- left figure: pink half-heart ribbon -->
+  <path d="M97 60 C88 46 66 42 56 54 C44 68 52 92 78 110 C86 116 94 121 99 124 C97 112 97 96 97 84 C97 74 98 66 97 60 Z"
+        fill="url(#uk-pink)"/>
+  <path d="M97 60 C92 68 90 80 92 92 C94 82 96 74 100 68 C99 64 98 62 97 60 Z" fill="#FFFFFF" opacity="0.15"/>
+  <!-- right figure: gold half-heart ribbon with tail -->
+  <path d="M103 58 C110 44 132 38 144 50 C156 62 150 86 122 108 C114 114 107 120 101 126 C102 112 102 96 102 84 C102 72 102 64 103 58 Z"
+        fill="url(#uk-gold)"/>
+</svg>

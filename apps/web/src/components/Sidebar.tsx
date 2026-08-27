@@ -1,0 +1,122 @@
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
+import {
+  Bookmark,
+  Compass,
+  Crown,
+  Heart,
+  LayoutGrid,
+  LogOut,
+  MessageCircle,
+  Settings,
+  Sparkles,
+  User,
+  Users,
+} from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { api } from '@/lib/api';
+import { useState } from 'react';
+import { useAuth } from '@/lib/auth';
+import { Logo } from './Logo';
+
+interface Counts {
+  likesReceived: number;
+  matches: number;
+  unreadMessages: number;
+}
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const { user, logout } = useAuth();
+  const [upgradeError, setUpgradeError] = useState('');
+
+  /** Redirects to the provider checkout; shows a notice when payments are off. */
+  async function upgrade() {
+    setUpgradeError('');
+    try {
+      const { url } = await api<{ url: string }>('/payments/checkout', {
+        method: 'POST',
+        body: { plan: 'PREMIUM' },
+      });
+      window.location.href = url;
+    } catch {
+      setUpgradeError('Paiements bientôt disponibles');
+    }
+  }
+  const { data: counts } = useQuery({
+    queryKey: ['counts'],
+    queryFn: () => api<Counts>('/matching/counts'),
+    refetchInterval: 30_000,
+  });
+
+  const NAV = [
+    { href: '/', label: 'Tableau de bord', Icon: LayoutGrid },
+    { href: '/discover', label: 'Découvrir', Icon: Compass },
+    { href: '/likes', label: 'Likes', Icon: Heart, badge: counts?.likesReceived },
+    { href: '/matches', label: 'Matches', Icon: Users, badge: counts?.matches },
+    { href: '/messages', label: 'Messages', Icon: MessageCircle, badge: counts?.unreadMessages },
+    { href: '/bookmarks', label: 'Favoris', Icon: Bookmark },
+    { href: '/coach', label: 'Coach IA', Icon: Sparkles },
+    { href: '/profile', label: 'Profil', Icon: User },
+    { href: '/settings', label: 'Réglages', Icon: Settings },
+  ];
+
+  return (
+    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-gray-100 bg-white">
+      <Link href="/" className="px-6 py-5">
+        <Logo size={34} />
+      </Link>
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3">
+        {NAV.map(({ href, label, Icon, badge }) => {
+          const active = pathname === href;
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                active ? 'bg-brand-soft text-brand' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <span className="flex items-center gap-3">
+                <Icon size={18} strokeWidth={active ? 2.4 : 2} />
+                {label}
+              </span>
+              {!!badge && (
+                <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-semibold text-white">
+                  {badge}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+        <button
+          onClick={logout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+        >
+          <LogOut size={18} />
+          Déconnexion
+        </button>
+      </nav>
+      {user?.plan === 'FREE' && (
+        <div className="m-3 rounded-card bg-brand-soft p-4 text-center">
+          <Crown className="mx-auto mb-1 text-brand-gold" size={22} />
+          <div className="text-sm font-bold text-brand">Passez Premium</div>
+          <p className="mb-2 text-xs text-gray-600">
+            Likes illimités et voyez qui vous aime.
+          </p>
+          <button
+            onClick={upgrade}
+            className="w-full rounded-lg bg-brand py-1.5 text-xs font-semibold text-white"
+          >
+            Mettre à niveau
+          </button>
+          {upgradeError && (
+            <p className="mt-1.5 text-[11px] text-gray-500">{upgradeError}</p>
+          )}
+        </div>
+      )}
+    </aside>
+  );
+}

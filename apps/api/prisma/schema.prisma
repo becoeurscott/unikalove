@@ -1,0 +1,342 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum Plan {
+  FREE
+  PREMIUM
+  PREMIUM_PLUS
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+  DELETED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum SwipeType {
+  PASS
+  LIKE
+  SUPERLIKE
+  FAVORITE
+}
+
+enum MatchStatus {
+  ACTIVE
+  UNMATCHED
+  EXPIRED
+}
+
+enum MessageType {
+  TEXT
+  GIF
+  PHOTO
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ReportCategory {
+  FAKE_PROFILE
+  SCAM
+  HARASSMENT
+  INAPPROPRIATE_CONTENT
+  UNDERAGE
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum NotificationType {
+  NEW_MATCH
+  NEW_MESSAGE
+  NEW_LIKE
+  VERIFICATION
+  SYSTEM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+model User {
+  id              String     @id @default(uuid())
+  email           String     @unique
+  passwordHash    String?
+  role            Role       @default(USER)
+  plan            Plan       @default(FREE)
+  status          UserStatus @default(ACTIVE)
+  emailVerifiedAt DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  deletedAt       DateTime?
+
+  profile             Profile?
+  preference          Preference?
+  refreshTokens       RefreshToken[]
+  passwordResets      PasswordResetToken[]
+  swipesMade          Swipe[]              @relation("SwipeActor")
+  swipesReceived      Swipe[]              @relation("SwipeTarget")
+  matchesA            Match[]              @relation("MatchA")
+  matchesB            Match[]              @relation("MatchB")
+  messages            Message[]
+  reportsMade         Report[]             @relation("Reporter")
+  reportsReceived     Report[]             @relation("Reported")
+  blocksMade          Block[]              @relation("Blocker")
+  blocksReceived      Block[]              @relation("Blocked")
+  verifications       VerificationRequest[] @relation("VerificationUser")
+  verificationsReviewed VerificationRequest[] @relation("VerificationReviewer")
+  notifications       Notification[]
+  auditLogs           AdminAuditLog[]
+  subscriptions       Subscription[]
+}
+
+model Profile {
+  id           String    @id @default(uuid())
+  userId       String    @unique
+  user         User      @relation(fields: [userId], references: [id])
+  displayName  String
+  bio          String?
+  gender       Gender
+  birthDate    DateTime
+  city         String?
+  country      String?
+  latitude     Float?
+  longitude    Float?
+  intent       String?
+  verified     Boolean   @default(false)
+  completeness Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  photos    Photo[]
+  interests ProfileInterest[]
+}
+
+model Photo {
+  id               String           @id @default(uuid())
+  profileId        String
+  profile          Profile          @relation(fields: [profileId], references: [id])
+  url              String
+  position         Int              @default(0)
+  moderationStatus ModerationStatus @default(PENDING)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+}
+
+model Interest {
+  id      String            @id @default(uuid())
+  slug    String            @unique
+  labelFr String
+  labelEn String
+  profiles ProfileInterest[]
+}
+
+model ProfileInterest {
+  profileId  String
+  interestId String
+  profile    Profile  @relation(fields: [profileId], references: [id])
+  interest   Interest @relation(fields: [interestId], references: [id])
+
+  @@id([profileId, interestId])
+}
+
+model Preference {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  minAge        Int      @default(18)
+  maxAge        Int      @default(60)
+  maxDistanceKm Int      @default(100)
+  genders       Gender[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model Swipe {
+  id        String    @id @default(uuid())
+  actorId   String
+  actor     User      @relation("SwipeActor", fields: [actorId], references: [id])
+  targetId  String
+  target    User      @relation("SwipeTarget", fields: [targetId], references: [id])
+  type      SwipeType
+  createdAt DateTime  @default(now())
+
+  @@unique([actorId, targetId])
+  @@index([targetId, type])
+}
+
+model Match {
+  id        String      @id @default(uuid())
+  userAId   String
+  userA     User        @relation("MatchA", fields: [userAId], references: [id])
+  userBId   String
+  userB     User        @relation("MatchB", fields: [userBId], references: [id])
+  status    MatchStatus @default(ACTIVE)
+  matchedAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  conversation Conversation?
+
+  @@unique([userAId, userBId])
+}
+
+model Conversation {
+  id        String    @id @default(uuid())
+  matchId   String    @unique
+  match     Match     @relation(fields: [matchId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  messages Message[]
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id])
+  type           MessageType  @default(TEXT)
+  content        String
+  reactions      Json?
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+  deletedAt      DateTime?
+
+  @@index([conversationId, createdAt])
+}
+
+model Report {
+  id         String         @id @default(uuid())
+  reporterId String
+  reporter   User           @relation("Reporter", fields: [reporterId], references: [id])
+  reportedId String
+  reported   User           @relation("Reported", fields: [reportedId], references: [id])
+  category   ReportCategory
+  details    String?
+  status     ReportStatus   @default(PENDING)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([status])
+}
+
+model Block {
+  id        String   @id @default(uuid())
+  blockerId String
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id])
+  blockedId String
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+}
+
+model VerificationRequest {
+  id           String           @id @default(uuid())
+  userId       String
+  user         User             @relation("VerificationUser", fields: [userId], references: [id])
+  selfieUrl    String
+  status       ModerationStatus @default(PENDING)
+  reviewedById String?
+  reviewedBy   User?            @relation("VerificationReviewer", fields: [reviewedById], references: [id])
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  body      String?
+  meta      Json?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt])
+}
+
+model AdminAuditLog {
+  id         String   @id @default(uuid())
+  actorId    String
+  actor      User     @relation(fields: [actorId], references: [id])
+  action     String
+  targetType String?
+  targetId   String?
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId, createdAt])
+}
+
+model Subscription {
+  id               String             @id @default(uuid())
+  userId           String
+  user             User               @relation(fields: [userId], references: [id])
+  plan             Plan
+  provider         String             @default("stripe")
+  providerRef      String?
+  status           SubscriptionStatus @default(ACTIVE)
+  currentPeriodEnd DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([userId, status])
+}

@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-brand-cream text-brand-ink antialiased;
+}
+
+::selection {
+  background: #d6336c;
+  color: #fff;
+}
