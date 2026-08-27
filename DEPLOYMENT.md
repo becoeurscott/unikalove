@@ -52,11 +52,11 @@ console.log('admin created');await p.\$disconnect();})()"
 
 Each app is a separate Vercel project rooted in its own directory:
 
-| App | Root directory | Suggested project |
-|---|---|---|
-| Admin dashboard | `apps/admin` | `admindashbaord-unikalove` |
-| User app | `apps/web` | `unikalove-app` |
-| Landing page | `apps/landing` | `unikalove` |
+| App | Root directory | Project | Status |
+|---|---|---|---|
+| Admin dashboard | `apps/admin` | `admindashbaord-unikalove` | **LIVE** — https://admindashbaord-unikalove.vercel.app |
+| User app | `apps/web` | `unikalove-app` | not deployed |
+| Landing page | `apps/landing` | `unikalove` | not deployed |
 
 Set on each project (Settings → Environment Variables):
 - `NEXT_PUBLIC_API_URL` = `https://unikalove-api.onrender.com/api/v1`
