@@ -16,6 +16,8 @@ export interface Voice {
 const CARD_W = 320;
 const GAP = 20;
 const PITCH = CARD_W + GAP;
+/** Longest quotes are clamped so a card never outgrows its fixed height. */
+const QUOTE_LINES = 6;
 
 const mod = (v: number, size: number) => (size <= 0 ? 0 : ((v % size) + size) % size);
 /** Wrap a value into [-span/2, span/2) so rows loop seamlessly. */
@@ -53,7 +55,7 @@ function Card({ voice }: { voice: Voice }) {
 
   return (
     <figure
-      className="flex h-full w-full flex-col rounded-3xl p-7"
+      className="flex h-full w-full flex-col overflow-hidden rounded-3xl p-5 sm:p-7"
       style={{
         background: voice.tint,
         boxShadow: `inset 0 0 0 1px ${hair}, 0 18px 40px -24px rgba(12,14,18,0.35)`,
@@ -61,12 +63,20 @@ function Card({ voice }: { voice: Voice }) {
     >
       <Quote size={20} style={{ color: muted }} className="mb-3 shrink-0" />
       <blockquote
-        className="flex-1 text-[15px] font-medium leading-relaxed"
-        style={{ color: ink }}
+        className="min-h-0 flex-1 overflow-hidden text-[15px] font-medium leading-relaxed"
+        style={{
+          color: ink,
+          display: '-webkit-box',
+          WebkitBoxOrient: 'vertical',
+          WebkitLineClamp: QUOTE_LINES,
+        }}
       >
         « {voice.quote} »
       </blockquote>
-      <figcaption className="mt-5 flex shrink-0 items-center gap-3 border-t pt-4" style={{ borderColor: hair }}>
+      <figcaption
+        className="mt-4 flex min-w-0 shrink-0 items-center gap-3 border-t pt-4"
+        style={{ borderColor: hair }}
+      >
         <div
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold"
           style={{
@@ -193,7 +203,7 @@ function Row({
 
   return (
     <div
-      className="relative h-[248px] cursor-grab touch-pan-y select-none active:cursor-grabbing"
+      className="relative h-[272px] cursor-grab touch-pan-y select-none active:cursor-grabbing"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
@@ -211,8 +221,8 @@ function Row({
             key={i}
             className="absolute top-0 h-full"
             style={{
-              width: CARD_W,
-              left: frameWidth / 2 - CARD_W / 2,
+              width: Math.min(CARD_W, Math.max(220, frameWidth - 32)),
+              left: frameWidth / 2 - Math.min(CARD_W, Math.max(220, frameWidth - 32)) / 2,
               transform: `translate3d(${x}px,0,0)`,
               willChange: 'transform',
             }}
