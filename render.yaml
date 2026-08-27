@@ -12,10 +12,12 @@ services:
     healthCheckPath: /api/v1/health
     autoDeploy: true
     envVars:
+      # Supabase hosts Postgres — set both in the dashboard.
+      # DATABASE_URL = pooled (port 6543, ?pgbouncer=true), DIRECT_URL = direct (5432)
       - key: DATABASE_URL
-        fromDatabase:
-          name: unikalove-db
-          property: connectionString
+        sync: false
+      - key: DIRECT_URL
+        sync: false
       - key: REDIS_URL
         fromService:
           type: keyvalue
@@ -64,10 +66,3 @@ services:
     region: frankfurt
     maxmemoryPolicy: allkeys-lru
     ipAllowList: []       # reachable only from inside Render
-
-databases:
-  - name: unikalove-db
-    databaseName: unikalove
-    user: unika
-    plan: free            # free Postgres expires after 90 days
-    region: frankfurt
