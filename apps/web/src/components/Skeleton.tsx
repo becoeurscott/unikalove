@@ -9,9 +9,9 @@ export function Skeleton({ className = '' }: { className?: string }) {
 /** Discover / daily-pick card placeholder. */
 export function ProfileCardSkeleton() {
   return (
-    <div className="w-64 shrink-0 overflow-hidden rounded-card border border-gray-100 bg-white">
-      <Skeleton className="h-64 w-full rounded-none" />
-      <div className="space-y-2 p-4">
+    <div className="w-52 shrink-0 overflow-hidden rounded-card border border-gray-100 bg-white">
+      <Skeleton className="h-44 w-full rounded-none" />
+      <div className="space-y-2 p-3">
         <Skeleton className="h-4 w-2/3" />
         <Skeleton className="h-3 w-1/2" />
         <div className="flex gap-1 pt-1">
@@ -19,9 +19,9 @@ export function ProfileCardSkeleton() {
           <Skeleton className="h-5 w-14 rounded-full" />
         </div>
         <div className="flex justify-around border-t border-gray-50 pt-3">
-          <Skeleton className="h-10 w-10 rounded-full" />
-          <Skeleton className="h-10 w-10 rounded-full" />
-          <Skeleton className="h-10 w-10 rounded-full" />
+          <Skeleton className="h-9 w-9 rounded-full" />
+          <Skeleton className="h-9 w-9 rounded-full" />
+          <Skeleton className="h-9 w-9 rounded-full" />
         </div>
       </div>
     </div>

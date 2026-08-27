@@ -63,17 +63,17 @@ export function ProfileCard({
           }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           whileHover={{ y: -4 }}
-          className="w-64 shrink-0 overflow-hidden rounded-card border border-gray-100 bg-white shadow-sm">
-      <div className="relative flex h-64 items-center justify-center bg-gradient-to-br from-brand-soft to-brand-cream">
-        <Avatar name={candidate.displayName} photo={candidate.photo} size={112} />
+          className="w-52 shrink-0 overflow-hidden rounded-card border border-gray-100 bg-white shadow-sm">
+      <div className="relative flex h-44 items-center justify-center bg-gradient-to-br from-brand-soft to-brand-cream">
+        <Avatar name={candidate.displayName} photo={candidate.photo} size={84} />
         {candidate.distanceKm != null && (
           <span className="absolute right-2 top-2 rounded-full bg-white/85 px-2 py-0.5 text-xs font-medium text-gray-600">
             à {candidate.distanceKm} km
           </span>
         )}
       </div>
-      <div className="p-4">
-        <div className="flex items-center gap-1.5 font-semibold">
+      <div className="p-3">
+        <div className="flex items-center gap-1.5 text-sm font-semibold">
           {candidate.displayName}, {candidate.age}
           {candidate.verified && <BadgeCheck size={16} className="text-sky-500" />}
         </div>
@@ -89,33 +89,33 @@ export function ProfileCard({
             </span>
           ))}
         </div>
-        <div className="mt-4 flex items-center justify-around border-t border-gray-50 pt-3">
+        <div className="mt-3 flex items-center justify-around border-t border-gray-50 pt-2.5">
           <motion.button
             whileTap={{ scale: 0.85 }}
             disabled={busy}
             onClick={() => handle('PASS')}
             aria-label="Passer"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition hover:bg-gray-50 disabled:opacity-50"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition hover:bg-gray-50 disabled:opacity-50"
           >
-            <X size={18} />
+            <X size={16} />
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.85 }}
             disabled={busy}
             onClick={() => handle('FAVORITE')}
             aria-label="Ajouter aux favoris"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-amber-200 text-amber-500 transition hover:bg-amber-50 disabled:opacity-50"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-200 text-amber-500 transition hover:bg-amber-50 disabled:opacity-50"
           >
-            <Star size={18} />
+            <Star size={16} />
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.85 }}
             disabled={busy}
             onClick={() => handle('LIKE')}
             aria-label="Aimer"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-white transition hover:opacity-90 disabled:opacity-50"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-white transition hover:opacity-90 disabled:opacity-50"
           >
-            {busy ? <Spinner size={18} /> : <Heart size={18} />}
+            {busy ? <Spinner size={16} /> : <Heart size={16} />}
           </motion.button>
         </div>
       </div>

@@ -89,6 +89,13 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
 }
 
 /** Content swap that slides in the direction of travel (wizard steps). */
+const stepVariants: Variants = {
+  // `custom` carries the direction: 1 = forward, -1 = back.
+  enter: (d: number) => ({ opacity: 0, x: d > 0 ? 40 : -40 }),
+  center: { opacity: 1, x: 0 },
+  exit: (d: number) => ({ opacity: 0, x: d > 0 ? -40 : 40 }),
+};
+
 export function StepTransition({
   step,
   direction,
@@ -103,9 +110,10 @@ export function StepTransition({
       <motion.div
         key={step}
         custom={direction}
-        initial={(d: number) => ({ opacity: 0, x: d > 0 ? 40 : -40 })}
-        animate={{ opacity: 1, x: 0 }}
-        exit={(d: number) => ({ opacity: 0, x: d > 0 ? -40 : 40 })}
+        variants={stepVariants}
+        initial="enter"
+        animate="center"
+        exit="exit"
         transition={{ duration: 0.32, ease: EASE }}
       >
         {children}
