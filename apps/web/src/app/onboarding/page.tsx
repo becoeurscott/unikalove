@@ -3,6 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { StepTransition } from '@/components/Motion';
+import { Spinner } from '@/components/Spinner';
 import { api } from '@/lib/api';
 
 interface Interest {
@@ -14,6 +16,13 @@ interface Interest {
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState<1 | -1>(1);
+
+  /** Move between wizard steps, remembering the direction for the slide. */
+  const go = (next: number) => {
+    setDirection(next > step ? 1 : -1);
+    setStep(next);
+  };
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -101,6 +110,7 @@ export default function OnboardingPage() {
           </div>
         </div>
 
+        <StepTransition step={step} direction={direction}>
         {step === 1 && (
           <div className="space-y-3">
             <input
@@ -158,7 +168,7 @@ export default function OnboardingPage() {
             </select>
             <button
               disabled={!form.displayName || !form.birthDate}
-              onClick={() => setStep(2)}
+              onClick={() => go(2)}
               className="w-full rounded-lg bg-brand py-2.5 font-semibold text-white disabled:opacity-40"
             >
               Continuer
@@ -188,13 +198,13 @@ export default function OnboardingPage() {
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => setStep(1)}
+                onClick={() => go(1)}
                 className="flex-1 rounded-lg border border-gray-200 py-2.5 font-medium text-gray-600"
               >
                 Retour
               </button>
               <button
-                onClick={() => setStep(3)}
+                onClick={() => go(3)}
                 className="flex-1 rounded-lg bg-brand py-2.5 font-semibold text-white"
               >
                 Continuer
@@ -256,7 +266,7 @@ export default function OnboardingPage() {
             {error && <p className="text-sm text-red-600">{error}</p>}
             <div className="flex gap-3">
               <button
-                onClick={() => setStep(2)}
+                onClick={() => go(2)}
                 className="flex-1 rounded-lg border border-gray-200 py-2.5 font-medium text-gray-600"
               >
                 Retour
@@ -266,11 +276,18 @@ export default function OnboardingPage() {
                 onClick={finish}
                 className="flex-1 rounded-lg bg-brand py-2.5 font-semibold text-white disabled:opacity-50"
               >
-                {busy ? 'Enregistrement…' : 'Terminer'}
+                {busy ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Spinner size={15} /> Enregistrement…
+                </span>
+              ) : (
+                'Terminer'
+              )}
               </button>
             </div>
           </div>
         )}
+        </StepTransition>
       </div>
     </main>
   );

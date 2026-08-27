@@ -1,7 +1,19 @@
 'use client';
 
+import { AnimatePresence, motion } from 'framer-motion';
 import { BadgeCheck, Heart, MapPin, Star, X } from 'lucide-react';
+import { useState } from 'react';
 import { Avatar } from './Avatar';
+import { Spinner } from './Spinner';
+
+type SwipeKind = 'PASS' | 'FAVORITE' | 'LIKE';
+
+/** Where the card flies when each action is taken. */
+const EXIT: Record<SwipeKind, { x: number; y: number; rotate: number }> = {
+  PASS: { x: -420, y: 0, rotate: -18 },
+  FAVORITE: { x: 0, y: -420, rotate: 0 },
+  LIKE: { x: 420, y: 0, rotate: 18 },
+};
 
 export interface Candidate {
   id: string;
@@ -23,11 +35,35 @@ export function ProfileCard({
   busy,
 }: {
   candidate: Candidate;
-  onSwipe: (type: 'PASS' | 'FAVORITE' | 'LIKE') => void;
+  onSwipe: (type: SwipeKind) => void;
   busy?: boolean;
 }) {
+  // Track the chosen action so the card can exit toward it before unmounting.
+  const [leaving, setLeaving] = useState<SwipeKind | null>(null);
+
+  function handle(type: SwipeKind) {
+    if (busy || leaving) return;
+    setLeaving(type);
+    // Let the exit animation play, then tell the parent.
+    setTimeout(() => onSwipe(type), 180);
+  }
+
   return (
-    <div className="w-64 shrink-0 overflow-hidden rounded-card border border-gray-100 bg-white shadow-sm">
+    <AnimatePresence>
+      {!leaving && (
+        <motion.div
+          layout
+          initial={{ opacity: 0, scale: 0.94, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{
+            opacity: 0,
+            scale: 0.9,
+            ...(leaving ? EXIT[leaving] : {}),
+            transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] },
+          }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          whileHover={{ y: -4 }}
+          className="w-64 shrink-0 overflow-hidden rounded-card border border-gray-100 bg-white shadow-sm">
       <div className="relative flex h-64 items-center justify-center bg-gradient-to-br from-brand-soft to-brand-cream">
         <Avatar name={candidate.displayName} photo={candidate.photo} size={112} />
         {candidate.distanceKm != null && (
@@ -54,32 +90,37 @@ export function ProfileCard({
           ))}
         </div>
         <div className="mt-4 flex items-center justify-around border-t border-gray-50 pt-3">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.85 }}
             disabled={busy}
-            onClick={() => onSwipe('PASS')}
+            onClick={() => handle('PASS')}
             aria-label="Passer"
             className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition hover:bg-gray-50 disabled:opacity-50"
           >
             <X size={18} />
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.85 }}
             disabled={busy}
-            onClick={() => onSwipe('FAVORITE')}
+            onClick={() => handle('FAVORITE')}
             aria-label="Ajouter aux favoris"
             className="flex h-10 w-10 items-center justify-center rounded-full border border-amber-200 text-amber-500 transition hover:bg-amber-50 disabled:opacity-50"
           >
             <Star size={18} />
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.85 }}
             disabled={busy}
-            onClick={() => onSwipe('LIKE')}
+            onClick={() => handle('LIKE')}
             aria-label="Aimer"
             className="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-white transition hover:opacity-90 disabled:opacity-50"
           >
-            <Heart size={18} />
-          </button>
+            {busy ? <Spinner size={18} /> : <Heart size={18} />}
+          </motion.button>
         </div>
       </div>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

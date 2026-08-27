@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { BadgeCheck } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
+import { GridSkeleton } from '@/components/Skeleton';
 import { api } from '@/lib/api';
 
 interface FavoriteRow {
@@ -32,7 +33,7 @@ export default function BookmarksPage() {
         <p className="text-sm text-gray-500">Les profils que vous avez mis de côté</p>
       </div>
 
-      {isLoading && <p className="text-gray-400">Chargement…</p>}
+      {isLoading && <GridSkeleton />}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {(favorites ?? []).map((f) => (

@@ -7,6 +7,7 @@ import {
   StubAiService,
 } from './ai.service';
 import { ChatMessage, OpenRouterClient } from './openrouter.client';
+import type { AiFeature } from './models';
 
 const SYSTEM_FR =
   "Tu es l'assistant IA d'UnikaLove, une application de rencontres pour l'Afrique et sa diaspora. " +
@@ -24,13 +25,16 @@ export class OpenRouterAiService implements AiService {
   constructor(
     private readonly client: OpenRouterClient,
     private readonly redis: RedisService,
+    /** Per-feature model routing — see models.ts for why this is not one model. */
+    private readonly models: Record<AiFeature, string>,
+    private readonly dailyBudget = DAILY_BUDGET,
   ) {}
 
   /** Returns false once a user exceeds their daily allowance. */
   async withinBudget(userId: string): Promise<boolean> {
     const day = new Date().toISOString().slice(0, 10);
     const used = await this.redis.incr(`ai:budget:${userId}:${day}`, 86_400);
-    if (used > DAILY_BUDGET) {
+    if (used > this.dailyBudget) {
       this.logger.warn(`AI daily budget reached for user ${userId}`);
       return false;
     }
@@ -55,6 +59,7 @@ export class OpenRouterAiService implements AiService {
           'Réponds UNIQUEMENT avec {"score": nombre entre 0 et 1}.',
       ),
       120,
+      this.models.compatibility,
     );
     const score = Number(result?.score);
     if (!Number.isFinite(score)) return null;
@@ -71,6 +76,7 @@ export class OpenRouterAiService implements AiService {
           'Réponds UNIQUEMENT avec {"suggestions": ["...", "...", "..."]}.',
       ),
       400,
+      this.models.profileSuggestions,
     );
     return this.clean(result?.suggestions) ?? this.fallback.profileSuggestions();
   }
@@ -86,6 +92,7 @@ export class OpenRouterAiService implements AiService {
           'Réponds UNIQUEMENT avec {"starters": ["...", "...", "..."]}.',
       ),
       400,
+      this.models.starters,
     );
     return this.clean(result?.starters) ?? this.fallback.conversationStarters();
   }
@@ -106,6 +113,7 @@ export class OpenRouterAiService implements AiService {
           'Réponds UNIQUEMENT avec {"replies": ["...", "...", "..."]}.',
       ),
       400,
+      this.models.replies,
     );
     return this.clean(result?.replies) ?? this.fallback.replySuggestions();
   }
@@ -123,7 +131,11 @@ export class OpenRouterAiService implements AiService {
       ...history.slice(-6),
       { role: 'user', content: message },
     ];
-    const answer = await this.client.chat(messages, { maxTokens: 500, temperature: 0.8 });
+    const answer = await this.client.chat(messages, {
+      maxTokens: 500,
+      temperature: 0.8,
+      model: this.models.coach,
+    });
     return answer?.trim() || this.fallback.coach();
   }
 
@@ -147,6 +159,7 @@ export class OpenRouterAiService implements AiService {
         },
       ],
       150,
+      this.models.moderation,
     );
     if (!result || typeof result.flagged !== 'boolean') return { flagged: false };
     return { flagged: result.flagged, reason: result.reason };

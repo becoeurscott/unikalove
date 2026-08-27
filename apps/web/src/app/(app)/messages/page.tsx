@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { Avatar } from '@/components/Avatar';
+import { ListSkeleton } from '@/components/Skeleton';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
@@ -29,7 +30,7 @@ export default function MessagesPage() {
         <p className="text-sm text-gray-500">Vos conversations</p>
       </div>
 
-      {isLoading && <p className="text-gray-400">Chargement…</p>}
+      {isLoading && <ListSkeleton />}
 
       <div className="divide-y divide-gray-50 rounded-card border border-gray-100 bg-white">
         {(conversations ?? []).map((c) => {

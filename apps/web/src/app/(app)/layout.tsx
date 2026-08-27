@@ -3,7 +3,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { PageTransition } from '@/components/Motion';
 import { Sidebar } from '@/components/Sidebar';
+import { LoadingScreen } from '@/components/Spinner';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
@@ -29,14 +31,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [profile.error, router]);
 
   if (loading || (user && profile.isLoading)) {
-    return <div className="flex min-h-screen items-center justify-center text-gray-400">Chargement…</div>;
+    return <LoadingScreen />;
   }
   if (!user) return null;
 
   return (
     <div className="flex">
       <Sidebar />
-      <main className="h-screen flex-1 overflow-y-auto p-8">{children}</main>
+      <main className="h-screen flex-1 overflow-y-auto p-8">
+        <PageTransition>{children}</PageTransition>
+      </main>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { PartyPopper } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Candidate, ProfileCard } from '@/components/ProfileCard';
+import { ProfileCardSkeleton } from '@/components/Skeleton';
 import { api } from '@/lib/api';
 
 export default function DiscoverPage() {
@@ -39,7 +40,7 @@ export default function DiscoverPage() {
     <div className="flex min-h-[80vh] flex-col items-center justify-center">
       <h1 className="mb-6 text-2xl font-bold">Découvrir</h1>
 
-      {isLoading && <p className="text-gray-400">Chargement…</p>}
+      {isLoading && <ProfileCardSkeleton />}
 
       {!isLoading && current && (
         <ProfileCard

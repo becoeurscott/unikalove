@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { BadgeCheck, Crown } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar } from '@/components/Avatar';
+import { GridSkeleton } from '@/components/Skeleton';
 import { api, ApiError } from '@/lib/api';
 
 interface LikeRow {
@@ -56,7 +57,7 @@ export default function LikesPage() {
         </div>
       )}
 
-      {isLoading && <p className="text-gray-400">Chargement…</p>}
+      {isLoading && <GridSkeleton />}
 
       {data && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

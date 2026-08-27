@@ -7,10 +7,18 @@ export interface ChatMessage {
 
 export interface OpenRouterConfig {
   apiKey: string;
+  /** Fallback model when a call does not name one. */
   model: string;
   baseUrl: string;
   appUrl?: string;
   timeoutMs: number;
+}
+
+export interface ChatOptions {
+  maxTokens?: number;
+  temperature?: number;
+  /** Overrides the default model for this call (per-feature routing). */
+  model?: string;
 }
 
 /**
@@ -23,10 +31,7 @@ export class OpenRouterClient {
 
   constructor(private readonly config: OpenRouterConfig) {}
 
-  async chat(
-    messages: ChatMessage[],
-    opts: { maxTokens?: number; temperature?: number } = {},
-  ): Promise<string | null> {
+  async chat(messages: ChatMessage[], opts: ChatOptions = {}): Promise<string | null> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.config.timeoutMs);
     try {
@@ -41,7 +46,7 @@ export class OpenRouterClient {
           'X-Title': 'UnikaLove',
         },
         body: JSON.stringify({
-          model: this.config.model,
+          model: opts.model ?? this.config.model,
           messages,
           max_tokens: opts.maxTokens ?? 700,
           temperature: opts.temperature ?? 0.7,
@@ -54,7 +59,15 @@ export class OpenRouterClient {
       }
       const json = (await res.json()) as {
         choices?: { message?: { content?: string } }[];
+        usage?: { prompt_tokens?: number; completion_tokens?: number; cost?: number };
       };
+      const u = json.usage;
+      if (u) {
+        // Cost per call is small but adds up; keep it visible in the logs.
+        this.logger.debug(
+          `${opts.model ?? this.config.model} in=${u.prompt_tokens} out=${u.completion_tokens} cost=$${(u.cost ?? 0).toFixed(6)}`,
+        );
+      }
       return json.choices?.[0]?.message?.content ?? null;
     } catch (err) {
       this.logger.warn(`OpenRouter call failed: ${(err as Error).message}`);
@@ -65,8 +78,12 @@ export class OpenRouterClient {
   }
 
   /** Chat call that expects JSON; tolerates markdown fences around the payload. */
-  async chatJson<T>(messages: ChatMessage[], maxTokens = 700): Promise<T | null> {
-    const raw = await this.chat(messages, { maxTokens, temperature: 0.6 });
+  async chatJson<T>(
+    messages: ChatMessage[],
+    maxTokens = 700,
+    model?: string,
+  ): Promise<T | null> {
+    const raw = await this.chat(messages, { maxTokens, temperature: 0.6, model });
     if (!raw) return null;
     const cleaned = raw
       .trim()

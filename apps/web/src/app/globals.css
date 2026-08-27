@@ -5,3 +5,29 @@
 body {
   @apply bg-gray-50 text-brand-ink antialiased;
 }
+
+/* --- Loading shimmer ------------------------------------------------------ */
+@keyframes unika-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.unika-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    rgb(243 244 246) 25%,
+    rgb(229 231 235) 37%,
+    rgb(243 244 246) 63%
+  );
+  background-size: 200% 100%;
+  animation: unika-shimmer 1.4s ease-in-out infinite;
+}
+
+/* Respect users who ask for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .unika-shimmer { animation: none; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
