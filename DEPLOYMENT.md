@@ -8,13 +8,19 @@ and the **frontends** (Vercel — static/SSR Next.js).
 The repo contains `render.yaml`, so Render can provision everything in one go:
 the Docker web service, a Postgres database, and a Redis (Key Value) instance.
 
+Live services (created 2026-08-27, Frankfurt region, free plans):
+- `unikalove-api` — https://unikalove-api.onrender.com (`srv-da86nm49v7es73eqcko0`)
+- `unikalove-redis` — Key Value (`red-da86n8mk1f9s73cf2cq0`)
+
+Postgres is hosted on **Supabase**, not Render.
+
 1. Push to GitHub (already done).
-2. Render dashboard → **New → Blueprint** → connect `becoeurscott/unikalove`.
-3. Render reads `render.yaml` and creates:
-   - `unikalove-api` (Docker, health check `/api/v1/health`)
-   - `unikalove-db` (Postgres — `DATABASE_URL` injected automatically)
-   - `unikalove-redis` (Key Value — `REDIS_URL` injected automatically)
-4. Fill the secrets marked `sync: false` in the dashboard:
+2. Create a Supabase project in a region near Frankfurt (`eu-central-1`).
+3. Supabase → Project Settings → Database → Connection string. Copy **both**:
+   - **Transaction pooler** (port 6543) → `DATABASE_URL`, append `?pgbouncer=true`
+   - **Direct connection** (port 5432) → `DIRECT_URL` (used only by `prisma migrate`)
+4. Fill the secrets marked `sync: false` in the Render dashboard:
+   - `DATABASE_URL` and `DIRECT_URL` — from Supabase (step 3)
    - `OPENROUTER_API_KEY` — your OpenRouter key
    - `CORS_ORIGINS` — comma-separated frontend URLs, e.g.
      `https://admindashbaord-unikalove.vercel.app,https://unikalove.vercel.app`
@@ -36,9 +42,10 @@ console.log('admin created');await p.\$disconnect();})()"
 ```
 
 ### Free-tier caveats
-- The web service **sleeps after ~15 minutes idle**; the next request takes
+- The Render web service **sleeps after ~15 minutes idle**; the next request takes
   ~30-60s to wake. Realtime chat drops while asleep.
-- Free Postgres **expires after 90 days** — upgrade before then or you lose data.
+- Supabase **pauses free projects after ~1 week of inactivity** — restore them from
+  the Supabase dashboard.
 - Upgrade the web service to Starter (~$7/mo) for always-on before real users.
 
 ## 2. Frontends → Vercel
