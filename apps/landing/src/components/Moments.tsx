@@ -5,20 +5,26 @@ import { useRef } from 'react';
 import { Reveal } from './Reveal';
 
 /**
- * Angled photo-shard collage like the identity poster: photos cut on the
- * diagonal with thin gold seams. Currently one source photo (different crops)
- * plus brand-gradient shards — more generated photos slot straight in.
+ * Angled photo-shard collage echoing the identity poster: photos cut on the
+ * diagonal with thin gold seams. Two gradient panels carry the stats so the
+ * row reads as brand, not stock photography.
  */
-const SHARDS = [
+const SHARDS: {
+  clip: string;
+  img?: string;
+  pos?: string;
+  gradient?: string;
+  label?: string;
+}[] = [
   {
     clip: 'polygon(0 0, 100% 8%, 92% 100%, 0 92%)',
-    img: '/couple-1.png',
-    pos: 'left center',
+    img: '/photos/photo-5.webp',
+    pos: 'center 35%',
   },
   {
     clip: 'polygon(8% 0, 100% 0, 100% 92%, 0 100%)',
-    img: '/couple-1.png',
-    pos: 'right center',
+    img: '/photos/photo-13.webp',
+    pos: 'center 40%',
   },
   {
     clip: 'polygon(0 8%, 92% 0, 100% 100%, 8% 100%)',
@@ -27,7 +33,7 @@ const SHARDS = [
   },
   {
     clip: 'polygon(0 0, 100% 8%, 92% 100%, 0 100%)',
-    img: '/couple-1.png',
+    img: '/photos/photo-11.webp',
     pos: 'center 30%',
   },
   {
@@ -75,31 +81,32 @@ function Shard({
   const y = useTransform(progress, [0, 1], [i % 2 === 0 ? 40 : -40, i % 2 === 0 ? -40 : 40]);
   return (
     <motion.div style={{ y }} className="relative">
-                {/* gold seam behind the shard */}
-                <div
-                  className="absolute inset-0 translate-x-1 translate-y-1 bg-brand-gold"
-                  style={{ clipPath: s.clip }}
-                />
-                <div
-                  className="relative flex h-56 items-end overflow-hidden sm:h-64"
-                  style={{ clipPath: s.clip }}
-                >
-                  {s.img ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={s.img}
-                      alt="Rencontre UnikaLove"
-                      className="absolute inset-0 h-full w-full object-cover"
-                      style={{ objectPosition: s.pos }}
-                    />
-                  ) : (
-                    <div className="absolute inset-0" style={{ background: s.gradient }} />
-                  )}
-                  {s.label && (
-                    <span className="relative z-10 w-full p-4 text-center text-sm font-bold text-white">
-                      {s.label}
-                    </span>
-                  )}
+      {/* gold seam behind the shard */}
+      <div
+        className="absolute inset-0 translate-x-1 translate-y-1 bg-brand-gold"
+        style={{ clipPath: s.clip }}
+      />
+      <div
+        className="relative flex h-56 items-end overflow-hidden sm:h-64"
+        style={{ clipPath: s.clip }}
+      >
+        {s.img ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={s.img}
+            alt="Rencontre UnikaLove"
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ objectPosition: s.pos }}
+          />
+        ) : (
+          <div className="absolute inset-0" style={{ background: s.gradient }} />
+        )}
+        {s.label && (
+          <span className="relative z-10 w-full p-4 text-center text-sm font-bold text-white">
+            {s.label}
+          </span>
+        )}
       </div>
     </motion.div>
   );

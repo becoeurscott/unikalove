@@ -10,6 +10,7 @@ const VOICES: Voice[] = [
     quote:
       'On a matché grâce à la sélection du jour. Six mois plus tard, on prépare notre premier voyage ensemble.',
     name: 'Aïcha & Kofi',
+    photo: '/photos/photo-5.webp',
     role: 'Ensemble depuis 6 mois',
     city: 'Douala ↔ Accra',
     tint: '#FDECF2',
@@ -19,6 +20,7 @@ const VOICES: Voice[] = [
     quote:
       'Enfin une appli où je me sens en sécurité. Les profils vérifiés changent tout, je ne perds plus mon temps avec de faux comptes.',
     name: 'Mariama',
+    photo: '/photos/photo-1.webp',
     role: 'Profil vérifié',
     city: 'Dakar',
     tint: '#D6336C',
@@ -28,6 +30,7 @@ const VOICES: Voice[] = [
     quote:
       "Depuis la diaspora, retrouver quelqu'un qui partage ma culture semblait impossible. Plus maintenant.",
     name: 'Serge',
+    photo: '/photos/photo-2.webp',
     role: 'Diaspora',
     city: 'Paris',
     tint: '#F5EBD6',
@@ -36,6 +39,7 @@ const VOICES: Voice[] = [
     quote:
       "Les suggestions de l'IA sont bluffantes. Trois matchs, trois vraies conversations — pas de swipe à l'infini.",
     name: 'Ngozi',
+    photo: '/photos/photo-11.webp',
     role: 'Matchs intelligents',
     city: 'Lagos',
     tint: '#E8DCF7',
@@ -45,6 +49,7 @@ const VOICES: Voice[] = [
     quote:
       "Les icebreakers m'ont débloqué. Je ne savais jamais quoi écrire, maintenant les conversations démarrent seules.",
     name: 'Ibrahim',
+    photo: '/photos/photo-13.webp',
     role: 'Coach IA',
     city: 'Abidjan',
     tint: '#FAF3EC',
@@ -54,6 +59,7 @@ const VOICES: Voice[] = [
     quote:
       'On habitait à 3 km sans jamais se croiser. UnikaLove nous a présentés un mardi soir.',
     name: 'Grace & Thierry',
+    photo: '/photos/photo-7.webp',
     role: 'Fiancés 💍',
     city: 'Yaoundé',
     tint: '#A87B14',
@@ -63,6 +69,7 @@ const VOICES: Voice[] = [
     quote:
       'La modération est réactive. J’ai signalé un profil douteux le matin, il avait disparu à midi.',
     name: 'Fatou',
+    photo: '/photos/photo-12.webp',
     role: 'Sécurité',
     city: 'Abidjan',
     tint: '#D9EEF5',
@@ -72,6 +79,7 @@ const VOICES: Voice[] = [
     quote:
       'Cinq profils par jour, choisis avec soin. Je passe moins de temps sur l’appli et je rencontre plus de monde.',
     name: 'Emeka',
+    photo: '/photos/photo-8.webp',
     role: 'Sélection du jour',
     city: 'Lagos',
     tint: '#2B2B2B',

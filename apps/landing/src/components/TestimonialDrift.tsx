@@ -11,6 +11,8 @@ export interface Voice {
   city: string;
   tint: string;
   verified?: boolean;
+  /** Optional portrait; falls back to coloured initials. */
+  photo?: string;
 }
 
 const CARD_W = 320;
@@ -77,15 +79,27 @@ function Card({ voice }: { voice: Voice }) {
         className="mt-4 flex min-w-0 shrink-0 items-center gap-3 border-t pt-4"
         style={{ borderColor: hair }}
       >
-        <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-          style={{
-            background: dark ? 'rgba(255,255,255,0.16)' : 'rgba(12,14,18,0.08)',
-            color: ink,
-          }}
-        >
-          {initials(voice.name)}
-        </div>
+        {voice.photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={voice.photo}
+            alt=""
+            loading="lazy"
+            draggable={false}
+            className="h-10 w-10 shrink-0 rounded-full object-cover"
+            style={{ boxShadow: `0 0 0 2px ${hair}` }}
+          />
+        ) : (
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+            style={{
+              background: dark ? 'rgba(255,255,255,0.16)' : 'rgba(12,14,18,0.08)',
+              color: ink,
+            }}
+          >
+            {initials(voice.name)}
+          </div>
+        )}
         <div className="min-w-0">
           <div className="flex items-center gap-1 text-sm font-bold" style={{ color: ink }}>
             <span className="truncate">{voice.name}</span>
