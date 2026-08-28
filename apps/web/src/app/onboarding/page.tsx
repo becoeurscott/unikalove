@@ -96,10 +96,18 @@ export default function OnboardingPage() {
     return null;
   }
 
-  /** Persists just this screen, so a drop-out never loses earlier answers. */
+  /**
+   * Persists just this screen, so a drop-out never loses earlier answers.
+   *
+   * The Profile row cannot exist without a gender (screen 4), so screens 2-3
+   * are buffered client-side and the first write happens at screen 4 carrying
+   * everything collected so far.
+   */
   async function persist(current: number) {
     const next = current + 1;
+    const profileExists = Boolean(existing.data);
     if (current <= 5) {
+      if (!profileExists && current < 4) return; // nothing to write yet
       await api('/profiles/me/step', {
         method: 'PATCH',
         body: {
