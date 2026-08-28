@@ -2,174 +2,184 @@ import React from "react";
 import {
   AbsoluteFill,
   Audio,
+  Img,
+  interpolate,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
-  interpolate,
-  Easing,
 } from "remotion";
 import words from "../public/words.json";
 
-type Word = { text: string; start: number; end: number };
-const allWords: Word[] = words as Word[];
+interface Word {
+  text: string;
+  start: number;
+  end: number;
+}
 
-// Scene backgrounds - dark cinematic gradients that shift per section
-const SCENES: { startTime: number; bg: string }[] = [
-  { startTime: 0, bg: "radial-gradient(ellipse at 50% 40%, #1a1005 0%, #080402 60%, #000 100%)" },
-  { startTime: 10, bg: "radial-gradient(ellipse at 30% 50%, #0a0a18 0%, #030308 60%, #000 100%)" },
-  { startTime: 20, bg: "radial-gradient(ellipse at 70% 30%, #12080a 0%, #050203 60%, #000 100%)" },
-  { startTime: 30, bg: "radial-gradient(ellipse at 40% 60%, #0a1008 0%, #030502 60%, #000 100%)" },
-  { startTime: 40, bg: "radial-gradient(ellipse at 60% 40%, #100808 0%, #050202 60%, #000 100%)" },
-  { startTime: 50, bg: "radial-gradient(ellipse at 50% 50%, #0d0d18 0%, #030310 60%, #000 100%)" },
-  { startTime: 58, bg: "radial-gradient(ellipse at 50% 50%, #1a0a0a 0%, #0a0202 60%, #000 100%)" },
+const SCENES = [
+  { start: 0, bg: "bg0.jpg" },
+  { start: 10, bg: "bg1.jpg" },
+  { start: 20, bg: "bg2.jpg" },
+  { start: 30, bg: "bg3.jpg" },
+  { start: 40, bg: "bg4.jpg" },
+  { start: 50, bg: "bg5.jpg" },
+  { start: 58, bg: "bg6.jpg" },
 ];
 
-const CTA_WORDS = ["agis."];
+const CTA_WORDS = ["act.", "act"];
 
 export const GenVideo: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const currentTime = frame / fps;
 
-  // Get current scene background
-  let currentBg = SCENES[0].bg;
-  for (const scene of SCENES) {
-    if (currentTime >= scene.startTime) currentBg = scene.bg;
-  }
+  const currentScene =
+    [...SCENES].reverse().find((s) => currentTime >= s.start) ?? SCENES[0];
+  const nextScene = SCENES[SCENES.indexOf(currentScene) + 1];
 
-  // Find current word
-  let currentWord: Word | null = null;
-  for (const w of allWords) {
-    if (currentTime >= w.start && currentTime <= w.end + 0.15) {
-      currentWord = w;
+  const currentWord: Word | null =
+    (words as Word[]).find(
+      (w) => currentTime >= w.start && currentTime <= w.end
+    ) ?? null;
+
+  const wordProgress = currentWord
+    ? (currentTime - currentWord.start) / (currentWord.end - currentWord.start)
+    : 0;
+
+  const scale = currentWord
+    ? interpolate(wordProgress, [0, 0.3], [0.7, 1], {
+        extrapolateRight: "clamp",
+      })
+    : 1;
+
+  const opacity = currentWord
+    ? interpolate(wordProgress, [0, 0.1, 0.8, 1], [0, 1, 1, 0], {
+        extrapolateRight: "clamp",
+      })
+    : 0;
+
+  const isCTA =
+    currentWord &&
+    CTA_WORDS.includes(currentWord.text.toLowerCase());
+
+  const fontSize =
+    currentWord && currentWord.text.length > 10
+      ? 64
+      : currentWord && currentWord.text.length > 7
+      ? 78
+      : 90;
+
+  // Scene crossfade
+  let sceneFade = 1;
+  if (nextScene) {
+    const fadeStart = nextScene.start - 0.3;
+    if (currentTime >= fadeStart && currentTime < nextScene.start) {
+      sceneFade = interpolate(
+        currentTime,
+        [fadeStart, nextScene.start],
+        [1, 0],
+        { extrapolateRight: "clamp" }
+      );
     }
   }
 
-  // Vignette overlay
-  const vignetteStyle: React.CSSProperties = {
-    position: "absolute",
-    top: 0, left: 0, right: 0, bottom: 0,
-    background: "radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,0,0.7) 100%)",
-    pointerEvents: "none",
-  };
-
-  // Subtle animated grain
-  const grainOpacity = 0.04 + Math.sin(frame * 0.3) * 0.02;
-
-  // Word display
-  const wordText = currentWord?.text?.replace(/[.,!?;:]/g, "") || "";
-  const rawText = currentWord?.text || "";
-  const isCTA = CTA_WORDS.some((c) => rawText.toLowerCase().includes(c.toLowerCase()));
-
-  // Scale animation on word appearance
-  const wordProgress = currentWord
-    ? interpolate(
-        currentTime,
-        [currentWord.start, currentWord.start + 0.08],
-        [0.7, 1],
-        { extrapolateRight: "clamp", easing: Easing.out(Easing.cubic) }
-      )
-    : 1;
-
-  const wordOpacity = currentWord
-    ? interpolate(
-        currentTime,
-        [currentWord.start, currentWord.start + 0.05, currentWord.end + 0.1, currentWord.end + 0.15],
-        [0, 1, 1, 0],
-        { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-      )
-    : 0;
-
   return (
-    <AbsoluteFill style={{ background: "#000" }}>
-      {/* Scene background */}
-      <AbsoluteFill style={{ background: currentBg, opacity: 0.9 }} />
+    <AbsoluteFill style={{ backgroundColor: "#000" }}>
+      {/* Background image */}
+      <AbsoluteFill style={{ opacity: sceneFade }}>
+        <Img
+          src={staticFile(currentScene.bg)}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+          }}
+        />
+      </AbsoluteFill>
 
-      {/* Vignette */}
-      <div style={vignetteStyle} />
+      {/* Next scene (for crossfade) */}
+      {nextScene && currentTime >= nextScene.start - 0.3 && (
+        <AbsoluteFill style={{ opacity: 1 - sceneFade }}>
+          <Img
+            src={staticFile(nextScene.bg)}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
+        </AbsoluteFill>
+      )}
 
-      {/* Film grain */}
-      <div
+      {/* Vignette overlay */}
+      <AbsoluteFill
         style={{
-          position: "absolute",
-          top: 0, left: 0, right: 0, bottom: 0,
-          opacity: grainOpacity,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.5'/%3E%3C/svg%3E")`,
-          mixBlendMode: "overlay",
-          pointerEvents: "none",
+          background:
+            "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.85) 100%)",
         }}
       />
 
-      {/* Cross icon watermark */}
-      <div
+      {/* Film grain SVG filter */}
+      <svg width="0" height="0" style={{ position: "absolute" }}>
+        <filter id="grain">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.75"
+            numOctaves="4"
+            seed={frame % 10}
+          />
+          <feColorMatrix type="saturate" values="0" />
+          <feBlend in="SourceGraphic" mode="multiply" />
+        </filter>
+      </svg>
+      <AbsoluteFill
         style={{
-          position: "absolute",
-          top: 60,
-          left: 0, right: 0,
-          display: "flex",
-          justifyContent: "center",
-          opacity: 0.12,
-          fontSize: 36,
-          color: "#F2E48C",
-          fontFamily: "serif",
-          letterSpacing: 8,
+          filter: "url(#grain)",
+          opacity: 0.06,
+          mixBlendMode: "overlay",
         }}
-      >
-        ✟
-      </div>
+      />
 
-      {/* Word subtitle - centered */}
+      {/* Word subtitle */}
       {currentWord && (
-        <div
+        <AbsoluteFill
           style={{
-            position: "absolute",
-            top: 0, left: 0, right: 0, bottom: 0,
-            display: "flex",
-            alignItems: "center",
             justifyContent: "center",
-            padding: "0 40px",
+            alignItems: "center",
           }}
         >
           <div
             style={{
-              fontFamily: "'Impact', 'Arial Black', 'Helvetica Neue', sans-serif",
-              fontWeight: 900,
+              transform: `scale(${scale})`,
+              opacity,
+              fontFamily: "Impact, 'Arial Black', sans-serif",
               fontStyle: "italic",
-              fontSize: wordText.length > 12 ? 64 : wordText.length > 8 ? 78 : 90,
-              textTransform: "uppercase",
+              fontSize,
+              fontWeight: "bold",
               color: isCTA ? "#FF2020" : "#F2E48C",
-              textShadow: isCTA
-                ? "0 0 30px rgba(255,32,32,0.6), 3px 3px 6px rgba(0,0,0,0.9)"
-                : "3px 3px 6px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.5)",
-              transform: `scale(${wordProgress})`,
-              opacity: wordOpacity,
+              textTransform: "uppercase",
               textAlign: "center",
-              lineHeight: 1.1,
+              textShadow: "0 4px 24px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.7)",
+              letterSpacing: 2,
+              padding: "0 40px",
             }}
           >
-            {wordText.toUpperCase()}
+            {currentWord.text}
           </div>
-        </div>
+        </AbsoluteFill>
       )}
 
-      {/* Bottom bar */}
+      {/* Cross watermark */}
       <div
         style={{
           position: "absolute",
-          bottom: 80,
-          left: 0, right: 0,
-          display: "flex",
-          justifyContent: "center",
-          opacity: 0.25,
+          top: 60,
+          right: 30,
+          fontSize: 32,
+          color: "rgba(255,255,255,0.15)",
         }}
       >
-        <div
-          style={{
-            width: 60,
-            height: 2,
-            background: "linear-gradient(90deg, transparent, #F2E48C, transparent)",
-          }}
-        />
+        ✟
       </div>
 
       {/* Audio */}
