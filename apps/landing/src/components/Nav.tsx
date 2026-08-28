@@ -1,6 +1,8 @@
 'use client';
 
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { AnimatePresence, motion, useScroll, useTransform } from 'framer-motion';
+import { Menu, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Logo } from './Logo';
 
 const APP = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
@@ -22,6 +24,21 @@ export function Nav() {
   const height = useTransform(scrollY, [0, 120], ['5.5rem', '4rem']);
   // The hero is dark: wordmark stays white until the bar gains its own background.
   const inkColor = useTransform(scrollY, [0, 120], ['#FFFFFF', '#2B2B2B']);
+
+  const [open, setOpen] = useState(false);
+
+  // The panel only exists below md; widening the window must not strand it open.
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const onChange = () => mq.matches && setOpen(false);
+    mq.addEventListener('change', onChange);
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      mq.removeEventListener('change', onChange);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, []);
 
   return (
     <motion.header
@@ -63,8 +80,55 @@ export function Nav() {
           >
             S&apos;inscrire
           </motion.a>
+          {/*
+            Without this the section links are simply unreachable on a phone —
+            the desktop nav is hidden below md and nothing replaced it.
+          */}
+          <motion.button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
+            aria-expanded={open}
+            style={{ color: inkColor }}
+            className="-mr-2 p-2 md:hidden"
+          >
+            {open ? <X size={22} /> : <Menu size={22} />}
+          </motion.button>
         </div>
       </div>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-x-0 top-full border-t border-black/5 bg-white/95 backdrop-blur-md md:hidden"
+          >
+            <nav className="mx-auto flex max-w-6xl flex-col px-6 py-2">
+              {LINKS.map((l) => (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  onClick={() => setOpen(false)}
+                  className="border-b border-black/5 py-3.5 text-sm font-medium text-brand-ink last:border-0"
+                >
+                  {l.label}
+                </a>
+              ))}
+              {/* Hidden in the bar itself below sm, so it belongs in here too. */}
+              <a
+                href={`${APP}/login`}
+                onClick={() => setOpen(false)}
+                className="py-3.5 text-sm font-medium text-brand sm:hidden"
+              >
+                Se connecter
+              </a>
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.header>
   );
 }
