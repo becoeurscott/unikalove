@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -71,31 +71,37 @@ export function StaggerItem({
  * Cross-fades page content on navigation. Keyed on the pathname so each route
  * gets its own enter/exit pass.
  */
+/**
+ * Same reasoning as StepTransition: a keyed remount, not AnimatePresence, so a
+ * missed exit callback can never leave the previous route on screen.
+ */
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={pathname}
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
-        transition={{ duration: 0.28, ease: EASE }}
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <motion.div
+      key={pathname}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: EASE }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
 /** Content swap that slides in the direction of travel (wizard steps). */
 const stepVariants: Variants = {
-  // `custom` carries the direction: 1 = forward, -1 = back.
   enter: (d: number) => ({ opacity: 0, x: d > 0 ? 40 : -40 }),
   center: { opacity: 1, x: 0 },
-  exit: (d: number) => ({ opacity: 0, x: d > 0 ? -40 : 40 }),
 };
 
+/**
+ * Deliberately not AnimatePresence: with mode="wait" the exit never completed
+ * here, so the previous screen stayed mounted and the wizard appeared frozen.
+ * A keyed motion.div remounts on every step change, which makes showing the
+ * right content structural rather than dependent on an animation callback.
+ * The trade-off is an enter-only transition, which reads the same in practice.
+ */
 export function StepTransition({
   step,
   direction,
@@ -106,18 +112,15 @@ export function StepTransition({
   children: React.ReactNode;
 }) {
   return (
-    <AnimatePresence mode="wait" custom={direction} initial={false}>
-      <motion.div
-        key={step}
-        custom={direction}
-        variants={stepVariants}
-        initial="enter"
-        animate="center"
-        exit="exit"
-        transition={{ duration: 0.32, ease: EASE }}
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <motion.div
+      key={step}
+      custom={direction}
+      variants={stepVariants}
+      initial="enter"
+      animate="center"
+      transition={{ duration: 0.3, ease: EASE }}
+    >
+      {children}
+    </motion.div>
   );
 }

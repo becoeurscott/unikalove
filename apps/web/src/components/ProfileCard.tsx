@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { BadgeCheck, Heart, MapPin, Star, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Avatar } from './Avatar';
 import { Spinner } from './Spinner';
 
@@ -40,6 +40,10 @@ export function ProfileCard({
 }) {
   // Track the chosen action so the card can exit toward it before unmounting.
   const [leaving, setLeaving] = useState<SwipeKind | null>(null);
+
+  // The parent reuses this component for the next candidate, so the exit flag
+  // has to clear on its own — otherwise the deck goes blank after one swipe.
+  useEffect(() => setLeaving(null), [candidate.userId]);
 
   function handle(type: SwipeKind) {
     if (busy || leaving) return;
