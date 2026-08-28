@@ -132,8 +132,11 @@ export default function ChatPage() {
     );
   }
 
+  // Height fills whatever the shell leaves: on mobile a 4.5rem top bar plus
+  // 2.5rem bottom padding, in dvh so browser chrome cannot clip the composer;
+  // from md up it is the 4rem of page padding.
   return (
-    <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-2xl flex-col">
+    <div className="mx-auto flex h-[calc(100dvh-7rem)] max-w-2xl flex-col md:h-[calc(100vh-4rem)]">
       <div className="mb-4 flex items-center gap-3">
         <Link href="/messages" className="rounded-lg p-2 hover:bg-gray-100">
           <ArrowLeft size={18} />

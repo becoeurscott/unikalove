@@ -9,12 +9,14 @@ import {
   LayoutGrid,
   LogOut,
   MessageCircle,
+  Menu,
   Settings,
   Sparkles,
   User,
   Users,
   Volume2,
   VolumeX,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -22,7 +24,7 @@ import { api } from '@/lib/api';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { isSoundEnabled, playSound, setSoundEnabled } from '@/lib/sound';
-import { Logo } from './Logo';
+import { Logo, LogoMark } from './Logo';
 
 interface Counts {
   likesReceived: number;
@@ -35,6 +37,7 @@ export function Sidebar() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [upgradeError, setUpgradeError] = useState('');
+  const [open, setOpen] = useState(false);
 
   /**
    * Plan, duration and payment method are chosen on /premium — checkout can no
@@ -70,6 +73,22 @@ export function Sidebar() {
     else if (counts.likesReceived > before.likesReceived) playSound('notify');
   }, [counts]);
 
+  // Navigating always closes the drawer; otherwise it stays over the new page.
+  useEffect(() => setOpen(false), [pathname]);
+
+  // While the drawer is over the page, the page behind it must not scroll.
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
   const NAV = [
     { href: '/', label: 'Tableau de bord', Icon: LayoutGrid },
     { href: '/discover', label: 'Découvrir', Icon: Compass },
@@ -82,8 +101,13 @@ export function Sidebar() {
     { href: '/settings', label: 'Réglages', Icon: Settings },
   ];
 
-  return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-gray-100 bg-white">
+  /** Any unseen activity at all — the dot on the closed mobile menu button. */
+  const hasActivity = Boolean(
+    (counts?.unreadMessages ?? 0) + (counts?.likesReceived ?? 0) + (counts?.matches ?? 0),
+  );
+
+  const panel = (
+    <>
       <Link href="/" className="px-6 py-5">
         <Logo size={34} />
       </Link>
@@ -138,20 +162,75 @@ export function Sidebar() {
         <div className="m-3 rounded-card bg-brand-soft p-4 text-center">
           <Crown className="mx-auto mb-1 text-brand-gold" size={22} />
           <div className="text-sm font-bold text-brand">Passez Premium</div>
-          <p className="mb-2 text-xs text-gray-600">
-            Likes illimités et voyez qui vous aime.
-          </p>
+          <p className="mb-2 text-xs text-gray-600">Likes illimités et voyez qui vous aime.</p>
           <button
             onClick={upgrade}
             className="w-full rounded-lg bg-brand py-1.5 text-xs font-semibold text-white"
           >
             Mettre à niveau
           </button>
-          {upgradeError && (
-            <p className="mt-1.5 text-[11px] text-gray-500">{upgradeError}</p>
-          )}
+          {upgradeError && <p className="mt-1.5 text-[11px] text-gray-500">{upgradeError}</p>}
         </div>
       )}
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop: a permanent rail. */}
+      <aside className="hidden h-screen w-64 shrink-0 flex-col border-r border-gray-100 bg-white md:flex">
+        {panel}
+      </aside>
+
+      {/* Mobile: a compact bar; the same panel slides in over the page. */}
+      <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b border-gray-100 bg-white/95 px-4 backdrop-blur md:hidden">
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Ouvrir le menu"
+          aria-expanded={open}
+          className="relative rounded-lg p-2 text-gray-600 transition hover:bg-gray-50"
+        >
+          <Menu size={20} />
+          {hasActivity && (
+            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-brand" />
+          )}
+        </button>
+        <Link href="/" aria-label="Accueil">
+          <LogoMark size={26} />
+        </Link>
+        <Link
+          href="/messages"
+          aria-label="Messages"
+          className="relative rounded-lg p-2 text-gray-600 transition hover:bg-gray-50"
+        >
+          <MessageCircle size={20} />
+          {!!counts?.unreadMessages && (
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-semibold text-white">
+              {counts.unreadMessages}
+            </span>
+          )}
+        </Link>
+      </header>
+
+      {open && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <button
+            aria-label="Fermer le menu"
+            onClick={() => setOpen(false)}
+            className="absolute inset-0 bg-black/40"
+          />
+          <div className="unika-drawer absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col bg-white shadow-xl">
+            <button
+              onClick={() => setOpen(false)}
+              aria-label="Fermer le menu"
+              className="absolute right-3 top-4 rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-50"
+            >
+              <X size={18} />
+            </button>
+            {panel}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

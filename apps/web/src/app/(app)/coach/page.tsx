@@ -92,7 +92,7 @@ export default function CoachPage() {
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-2xl flex-col">
+    <div className="mx-auto flex h-[calc(100dvh-7rem)] max-w-2xl flex-col md:h-[calc(100vh-4rem)]">
       <div className="mb-4">
         <h1 className="flex items-center gap-2 text-2xl font-bold">
           <Sparkles className="text-brand" size={22} /> Coach IA
