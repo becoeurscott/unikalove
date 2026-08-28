@@ -16,16 +16,8 @@ interface Word {
   end: number;
 }
 
-const SCENES = [
-  { start: 0, bg: "bg0.jpg" },
-  { start: 10, bg: "bg1.jpg" },
-  { start: 20, bg: "bg2.jpg" },
-  { start: 30, bg: "bg3.jpg" },
-  { start: 40, bg: "bg4.jpg" },
-  { start: 50, bg: "bg5.jpg" },
-  { start: 58, bg: "bg6.jpg" },
-];
-
+const TOTAL_IMAGES = 38;
+const CUT_INTERVAL = 3; // frames = 0.1s at 30fps
 const CTA_WORDS = ["act.", "act"];
 
 export const GenVideo: React.FC = () => {
@@ -33,9 +25,9 @@ export const GenVideo: React.FC = () => {
   const { fps } = useVideoConfig();
   const currentTime = frame / fps;
 
-  const currentScene =
-    [...SCENES].reverse().find((s) => currentTime >= s.start) ?? SCENES[0];
-  const nextScene = SCENES[SCENES.indexOf(currentScene) + 1];
+  // Switch image every 3 frames (0.1s)
+  const imageIndex = Math.floor(frame / CUT_INTERVAL) % TOTAL_IMAGES;
+  const currentImage = `d${imageIndex}.jpg`;
 
   const currentWord: Word | null =
     (words as Word[]).find(
@@ -69,26 +61,12 @@ export const GenVideo: React.FC = () => {
       ? 78
       : 90;
 
-  // Scene crossfade
-  let sceneFade = 1;
-  if (nextScene) {
-    const fadeStart = nextScene.start - 0.3;
-    if (currentTime >= fadeStart && currentTime < nextScene.start) {
-      sceneFade = interpolate(
-        currentTime,
-        [fadeStart, nextScene.start],
-        [1, 0],
-        { extrapolateRight: "clamp" }
-      );
-    }
-  }
-
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      {/* Background image */}
-      <AbsoluteFill style={{ opacity: sceneFade }}>
+      {/* Background image - rapid cuts */}
+      <AbsoluteFill>
         <Img
-          src={staticFile(currentScene.bg)}
+          src={staticFile(currentImage)}
           style={{
             width: "100%",
             height: "100%",
@@ -96,20 +74,6 @@ export const GenVideo: React.FC = () => {
           }}
         />
       </AbsoluteFill>
-
-      {/* Next scene (for crossfade) */}
-      {nextScene && currentTime >= nextScene.start - 0.3 && (
-        <AbsoluteFill style={{ opacity: 1 - sceneFade }}>
-          <Img
-            src={staticFile(nextScene.bg)}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-          />
-        </AbsoluteFill>
-      )}
 
       {/* Vignette overlay */}
       <AbsoluteFill
