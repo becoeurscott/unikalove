@@ -129,6 +129,8 @@ model User {
 
 model Profile {
   id           String    @id @default(uuid())
+  /// Highest onboarding screen completed (2-12); 12 = finished.
+  onboardingStep Int     @default(1)
   userId       String    @unique
   user         User      @relation(fields: [userId], references: [id])
   displayName  String
@@ -142,6 +144,23 @@ model Profile {
   intent       String?
   verified     Boolean   @default(false)
   completeness Int       @default(0)
+
+  // --- Lifestyle & personality (onboarding screen 8) ---
+  heightCm   Int?
+  education  String?
+  occupation String?
+  smoking    String?   // never | socially | regularly
+  drinking   String?   // never | socially | regularly
+  religion   String?
+  children   String?   // have | want | none
+  languages  String[]
+  traits     String[]
+
+  // --- Privacy controls (onboarding screen 11) ---
+  showDistance Boolean @default(true)
+  showAge      Boolean @default(true)
+  discoverable Boolean @default(true)
+
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?

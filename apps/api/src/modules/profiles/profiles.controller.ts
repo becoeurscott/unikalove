@@ -1,9 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ProfilesService } from './profiles.service';
 import {
   AddPhotoDto,
+  LifestyleDto,
+  PrivacyDto,
+  ProfileStepDto,
   SetInterestsDto,
   SubmitVerificationDto,
   UpdatePreferenceDto,
@@ -24,6 +27,22 @@ export class ProfilesController {
   @Put('me')
   upsert(@CurrentUser() user: AuthUser, @Body() dto: UpsertProfileDto) {
     return this.profiles.upsert(user.id, dto);
+  }
+
+  /** Onboarding: save one screen's worth of fields. */
+  @Patch('me/step')
+  saveStep(@CurrentUser() user: AuthUser, @Body() dto: ProfileStepDto) {
+    return this.profiles.saveStep(user.id, dto);
+  }
+
+  @Put('me/lifestyle')
+  updateLifestyle(@CurrentUser() user: AuthUser, @Body() dto: LifestyleDto) {
+    return this.profiles.updateLifestyle(user.id, dto);
+  }
+
+  @Put('me/privacy')
+  updatePrivacy(@CurrentUser() user: AuthUser, @Body() dto: PrivacyDto) {
+    return this.profiles.updatePrivacy(user.id, dto);
   }
 
   @Put('me/preferences')

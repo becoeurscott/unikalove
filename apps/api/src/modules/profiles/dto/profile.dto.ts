@@ -4,8 +4,10 @@ import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
+  IsBoolean,
   IsDate,
   IsEnum,
+  IsIn,
   IsInt,
   IsLatitude,
   IsLongitude,
@@ -118,4 +120,151 @@ export class SubmitVerificationDto {
   @ApiProperty()
   @IsUrl({ require_tld: false })
   selfieUrl: string;
+}
+
+
+/** Screen 8 — lifestyle & personality. Every field optional: saved per screen. */
+export class LifestyleDto {
+  @ApiPropertyOptional({ minimum: 120, maximum: 230 })
+  @IsOptional()
+  @IsInt()
+  @Min(120)
+  @Max(230)
+  heightCm?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  education?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  occupation?: string;
+
+  @ApiPropertyOptional({ enum: ['never', 'socially', 'regularly'] })
+  @IsOptional()
+  @IsIn(['never', 'socially', 'regularly'])
+  smoking?: string;
+
+  @ApiPropertyOptional({ enum: ['never', 'socially', 'regularly'] })
+  @IsOptional()
+  @IsIn(['never', 'socially', 'regularly'])
+  drinking?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  religion?: string;
+
+  @ApiPropertyOptional({ enum: ['have', 'want', 'none'] })
+  @IsOptional()
+  @IsIn(['have', 'want', 'none'])
+  children?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(8)
+  @IsString({ each: true })
+  languages?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(6)
+  @IsString({ each: true })
+  traits?: string[];
+}
+
+/** Screen 11 — privacy controls and consent. */
+export class PrivacyDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  showDistance?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  showAge?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  discoverable?: boolean;
+
+  @ApiPropertyOptional({ description: 'Records consent to the terms.' })
+  @IsOptional()
+  @IsBoolean()
+  acceptTerms?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  marketingOptIn?: boolean;
+}
+
+/** Partial profile save — used by each onboarding screen in turn. */
+export class ProfileStepDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  displayName?: string;
+
+  @ApiPropertyOptional({ type: String, format: 'date' })
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  birthDate?: Date;
+
+  @ApiPropertyOptional({ enum: Gender })
+  @IsOptional()
+  @IsEnum(Gender)
+  gender?: Gender;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  city?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  country?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsLatitude()
+  latitude?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsLongitude()
+  longitude?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  intent?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  bio?: string;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 12, description: 'Onboarding progress.' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  onboardingStep?: number;
 }
