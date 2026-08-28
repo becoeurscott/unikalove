@@ -21,7 +21,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex">
       <Sidebar />
-      <main className="h-screen flex-1 overflow-y-auto p-8">{children}</main>
+      {/*
+        Mobile puts a fixed 56px bar above the content, so the pane starts below
+        it and scrolls the window; from md up the rail is beside it and the pane
+        owns its own scroll.
+      */}
+      <main className="min-w-0 flex-1 px-4 pb-10 pt-[72px] md:h-screen md:overflow-y-auto md:p-8 md:pt-8">
+        {children}
+      </main>
     </div>
   );
 }

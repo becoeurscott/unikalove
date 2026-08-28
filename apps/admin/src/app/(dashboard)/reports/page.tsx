@@ -56,7 +56,8 @@ export default function ReportsPage() {
       <FadeIn delay={1}>
       <section className="rounded-card border border-gray-100 bg-white">
         <h2 className="border-b border-gray-100 px-5 py-4 font-semibold">User Reports</h2>
-        <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="border-b border-gray-100 text-xs uppercase text-gray-400">
             <tr>
               <th className="px-5 py-3">Category</th>
@@ -106,6 +107,7 @@ export default function ReportsPage() {
             )}
           </tbody>
         </table>
+        </div>
       </section>
       </FadeIn>
 
@@ -114,7 +116,8 @@ export default function ReportsPage() {
         <h2 className="border-b border-gray-100 px-5 py-4 font-semibold">
           Verification Requests
         </h2>
-        <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="border-b border-gray-100 text-xs uppercase text-gray-400">
             <tr>
               <th className="px-5 py-3">User</th>
@@ -162,6 +165,7 @@ export default function ReportsPage() {
             )}
           </tbody>
         </table>
+        </div>
       </section>
       </FadeIn>
     </div>

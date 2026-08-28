@@ -64,7 +64,7 @@ export default function UsersPage() {
       </FadeIn>
 
       <FadeIn delay={2} className="overflow-x-auto rounded-card border border-gray-100 bg-white">
-        <table className="w-full text-left text-sm">
+        <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="border-b border-gray-100 text-xs uppercase text-gray-400">
             <tr>
               <th className="px-5 py-3">Name</th>

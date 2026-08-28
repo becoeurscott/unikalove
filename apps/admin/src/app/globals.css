@@ -12,3 +12,22 @@
 body {
   @apply bg-gray-50 text-brand-ink antialiased;
 }
+
+/* --- Mobile navigation drawer --------------------------------------------- */
+@keyframes unika-drawer-in {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+.unika-drawer {
+  animation: unika-drawer-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Respect users who ask for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .unika-drawer { animation: none; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
