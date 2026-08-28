@@ -1,9 +1,12 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import { Send, Sparkles } from 'lucide-react';
+import { Crown, Lock, Send, Sparkles } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { Spinner } from '@/components/Spinner';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 
 interface Turn {
   role: 'user' | 'assistant';
@@ -18,6 +21,8 @@ const PROMPTS = [
 ];
 
 export default function CoachPage() {
+  const { user } = useAuth();
+  const router = useRouter();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -46,6 +51,44 @@ export default function CoachPage() {
     setTurns((t) => [...t, { role: 'user', content: text }]);
     setDraft('');
     ask.mutate(text);
+  }
+
+  // Premium-only: show the offer rather than letting the request 403.
+  if (user && user.plan === 'FREE') {
+    return (
+      <div className="mx-auto max-w-lg py-10 text-center">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-soft">
+          <Lock className="text-brand" size={26} />
+        </div>
+        <h1 className="text-2xl font-bold">Le Coach IA est réservé aux membres Premium</h1>
+        <p className="mx-auto mt-3 max-w-md text-gray-500">
+          Posez vos questions à un coach disponible 24h/24 : comment démarrer une conversation,
+          relancer un match, préparer un premier rendez-vous en toute sécurité.
+        </p>
+
+        <ul className="mx-auto mt-6 max-w-sm space-y-2.5 text-left text-sm text-gray-600">
+          {[
+            'Conseils personnalisés, en français',
+            'Idées de rendez-vous adaptées à votre ville',
+            'Rappels de sécurité avant une rencontre',
+            'Likes illimités et « qui vous a aimé »',
+          ].map((f) => (
+            <li key={f} className="flex items-start gap-2">
+              <Sparkles size={15} className="mt-0.5 shrink-0 text-brand" />
+              {f}
+            </li>
+          ))}
+        </ul>
+
+        <button
+          onClick={() => router.push('/premium')}
+          className="mt-7 inline-flex items-center gap-2 rounded-xl bg-brand px-6 py-3 font-semibold text-white shadow-lg shadow-brand/25 transition hover:opacity-90"
+        >
+          <Crown size={17} /> Passer Premium
+        </button>
+        <p className="mt-3 text-xs text-gray-400">À partir de 2 500 FCFA / mois</p>
+      </div>
+    );
   }
 
   return (
@@ -115,7 +158,7 @@ export default function CoachPage() {
           disabled={!draft.trim() || ask.isPending}
           className="flex items-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
         >
-          <Send size={16} /> Envoyer
+          {ask.isPending ? <Spinner size={16} /> : <Send size={16} />} Envoyer
         </button>
       </form>
     </div>

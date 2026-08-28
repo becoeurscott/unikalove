@@ -93,8 +93,18 @@ export class AiController {
     return { replies: await this.ai.replySuggestions(dto) };
   }
 
+  /**
+   * Premium only. The coach runs on the most expensive model and is 38% of all
+   * AI spend — leaving it open to free accounts made low-conversion scenarios
+   * unprofitable, since free users generate no revenue.
+   */
   @Post('coach')
   async coach(@CurrentUser() user: AuthUser, @Body() dto: CoachDto) {
+    if (user.plan === 'FREE') {
+      throw new ForbiddenException(
+        'Le Coach IA est réservé aux membres Premium — passez à Premium pour en profiter.',
+      );
+    }
     await this.assertBudget(user.id);
     return { answer: await this.ai.coach(dto.message, dto.history) };
   }

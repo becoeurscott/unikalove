@@ -55,7 +55,7 @@ export function Sidebar() {
     { href: '/matches', label: 'Matches', Icon: Users, badge: counts?.matches },
     { href: '/messages', label: 'Messages', Icon: MessageCircle, badge: counts?.unreadMessages },
     { href: '/bookmarks', label: 'Favoris', Icon: Bookmark },
-    { href: '/coach', label: 'Coach IA', Icon: Sparkles },
+    { href: '/coach', label: 'Coach IA', Icon: Sparkles, premium: true },
     { href: '/profile', label: 'Profil', Icon: User },
     { href: '/settings', label: 'Réglages', Icon: Settings },
   ];
@@ -66,7 +66,7 @@ export function Sidebar() {
         <Logo size={34} />
       </Link>
       <nav className="flex-1 space-y-1 overflow-y-auto px-3">
-        {NAV.map(({ href, label, Icon, badge }) => {
+        {NAV.map(({ href, label, Icon, badge, premium }) => {
           const active = pathname === href;
           return (
             <Link
@@ -84,6 +84,9 @@ export function Sidebar() {
                 <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-semibold text-white">
                   {badge}
                 </span>
+              )}
+              {premium && user?.plan === 'FREE' && (
+                <Crown size={13} className="text-brand-gold" aria-label="Premium" />
               )}
             </Link>
           );
