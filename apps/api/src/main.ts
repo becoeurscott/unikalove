@@ -9,7 +9,9 @@ async function bootstrap() {
   // rawBody lets the payments webhook verify provider signatures.
   const app = await NestFactory.create(AppModule, { rawBody: true });
 
-  app.use(helmet());
+  // Profile photos are served from this origin but rendered on the web app's
+  // origin, so the default same-origin CORP header would blank them out.
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(cookieParser());
   app.enableCors({
     origin: (process.env.CORS_ORIGINS ?? '').split(',').filter(Boolean),

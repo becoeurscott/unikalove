@@ -1,10 +1,12 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BadgeCheck, Plus, Sparkles, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { BadgeCheck, ImagePlus, Loader2, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { CompletenessRing } from '@/components/CompletenessRing';
-import { api } from '@/lib/api';
+import { SearchSelect } from '@/components/SearchSelect';
+import { COUNTRIES, PRIORITY_CODES, findCountry } from '@/lib/countries';
+import { api, apiUpload } from '@/lib/api';
 
 interface MyProfile {
   displayName: string;
@@ -25,6 +27,12 @@ interface MyProfile {
 interface Interest {
   slug: string;
   labelFr: string;
+  category: string;
+}
+
+interface InterestPayload {
+  categories: { key: string; labelFr: string }[];
+  interests: Interest[];
 }
 
 export default function ProfilePage() {
@@ -43,14 +51,58 @@ export default function ProfilePage() {
     retry: false,
   });
 
-  const { data: allInterests } = useQuery({
+  const { data: catalog } = useQuery({
     queryKey: ['interests'],
-    queryFn: () => api<Interest[]>('/profiles/interests'),
+    queryFn: () => api<InterestPayload>('/profiles/interests'),
   });
 
   const [form, setForm] = useState({ displayName: '', bio: '', city: '', country: '', intent: 'serious' });
   const [photoUrl, setPhotoUrl] = useState('');
   const [saved, setSaved] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [photoError, setPhotoError] = useState('');
+
+  // Mirrors the onboarding uploader: signed URL when storage is configured,
+  // otherwise the file is posted to the API.
+  const { data: mediaStatus } = useQuery({
+    queryKey: ['media-status'],
+    queryFn: () => api<{ uploads: boolean; direct: boolean }>('/media/status'),
+    retry: false,
+  });
+
+  async function uploadPhoto(file: File) {
+    setPhotoError('');
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('Image trop lourde (5 Mo maximum).');
+      return;
+    }
+    setUploading(true);
+    try {
+      let url: string;
+      if (mediaStatus?.direct) {
+        const ticket = await api<{ uploadUrl: string; publicUrl: string }>('/media/upload-url', {
+          method: 'POST',
+          body: { contentType: file.type },
+        });
+        const put = await fetch(ticket.uploadUrl, {
+          method: 'PUT',
+          headers: { 'content-type': file.type },
+          body: file,
+        });
+        if (!put.ok) throw new Error('upload failed');
+        url = ticket.publicUrl;
+      } else {
+        url = (await apiUpload<{ url: string }>('/media/upload', file)).url;
+      }
+      await api('/profiles/me/photos', { method: 'POST', body: { url } });
+      invalidate();
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : "L'envoi a échoué.");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   useEffect(() => {
     if (me) {
@@ -181,11 +233,17 @@ export default function ProfilePage() {
             placeholder="Ville"
             className="rounded-lg border border-gray-200 px-4 py-2.5 outline-none focus:border-brand"
           />
-          <input
-            value={form.country}
-            onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
+          <SearchSelect
+            options={COUNTRIES.map((c) => ({
+              value: c.name,
+              label: c.name,
+              prefix: c.flag,
+              priority: PRIORITY_CODES.includes(c.code),
+            }))}
+            value={findCountry(form.country)?.name ?? ''}
+            onChange={(v) => setForm((f) => ({ ...f, country: v }))}
             placeholder="Pays"
-            className="rounded-lg border border-gray-200 px-4 py-2.5 outline-none focus:border-brand"
+            searchPlaceholder="Rechercher un pays…"
           />
         </div>
         <select
@@ -226,11 +284,31 @@ export default function ProfilePage() {
             <p className="text-sm text-gray-400">Ajoutez jusqu&apos;à 3 photos (+10% chacune)</p>
           )}
         </div>
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="mb-3 flex items-center gap-2 rounded-lg border border-brand/30 px-4 py-2 text-sm font-semibold text-brand transition hover:bg-brand-soft disabled:opacity-60"
+        >
+          {uploading ? <Loader2 className="animate-spin" size={15} /> : <ImagePlus size={15} />}
+          {uploading ? 'Envoi…' : 'Envoyer une photo'}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void uploadPhoto(f);
+            e.target.value = '';
+          }}
+        />
+        {photoError && <p className="mb-2 text-sm text-red-600">{photoError}</p>}
         <div className="flex gap-2">
           <input
             value={photoUrl}
             onChange={(e) => setPhotoUrl(e.target.value)}
-            placeholder="URL de la photo (l'upload arrive bientôt)"
+            placeholder="…ou collez le lien d'une image"
             className="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-sm outline-none focus:border-brand"
           />
           <button
@@ -246,7 +324,7 @@ export default function ProfilePage() {
       <section className="rounded-card border border-gray-100 bg-white p-6">
         <h2 className="mb-3 font-semibold">Centres d&apos;intérêt</h2>
         <div className="flex flex-wrap gap-2">
-          {(allInterests ?? []).map((it) => {
+          {(catalog?.interests ?? []).map((it) => {
             const on = mySlugs.includes(it.slug);
             return (
               <button

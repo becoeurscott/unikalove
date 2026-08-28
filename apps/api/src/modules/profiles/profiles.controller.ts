@@ -47,7 +47,7 @@ export class ProfilesController {
 
   @Put('me/preferences')
   updatePreference(@CurrentUser() user: AuthUser, @Body() dto: UpdatePreferenceDto) {
-    return this.profiles.updatePreference(user.id, dto);
+    return this.profiles.updatePreference(user.id, dto, user.plan);
   }
 
   @Get('interests')
@@ -68,6 +68,12 @@ export class ProfilesController {
   @Delete('me/photos/:photoId')
   removePhoto(@CurrentUser() user: AuthUser, @Param('photoId') photoId: string) {
     return this.profiles.removePhoto(user.id, photoId);
+  }
+
+  /** Another member's profile, as this viewer is allowed to see it. */
+  @Get('user/:userId')
+  getPublic(@CurrentUser() user: AuthUser, @Param('userId') userId: string) {
+    return this.profiles.getPublic(user.id, userId);
   }
 
   @Post('me/verification')

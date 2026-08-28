@@ -1,6 +1,8 @@
 'use client';
+import { useQuery } from '@tanstack/react-query';
 import { BadgeCheck, MapPin, Pencil } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
+import { api } from '@/lib/api';
 import { StepHeader } from '../ui';
 import type { OnboardingDraft } from '../types';
 
@@ -17,6 +19,17 @@ export function Step10Preview({
   draft: OnboardingDraft;
   goto: (step: number) => void;
 }) {
+  // The draft stores slugs; the card has to show the same labels the user
+  // tapped, so the catalogue is read back from the cache the previous screen
+  // already filled.
+  const { data: catalog } = useQuery({
+    queryKey: ['interests'],
+    queryFn: () =>
+      api<{ interests: { slug: string; labelFr: string }[] }>('/profiles/interests'),
+  });
+  const labelFor = (slug: string) =>
+    catalog?.interests.find((i) => i.slug === slug)?.labelFr ?? slug;
+
   const yrs = age(draft.birthDate);
   const facts = [
     draft.occupation,
@@ -79,7 +92,7 @@ export function Step10Preview({
             <div className="flex flex-wrap gap-1.5 pt-1">
               {draft.interests.slice(0, 6).map((t) => (
                 <span key={t} className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600">
-                  {t}
+                  {labelFor(t)}
                 </span>
               ))}
               <button

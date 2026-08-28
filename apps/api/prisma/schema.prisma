@@ -128,6 +128,7 @@ model User {
   subscriptions       Subscription[]
   payments            Payment[]
   credits             CreditLedger[]
+  mediaFiles          MediaFile[]
 }
 
 model Profile {
@@ -184,11 +185,27 @@ model Photo {
   deletedAt        DateTime?
 }
 
+/// Fallback photo storage. Used only when Supabase Storage is not configured;
+/// the bytes live in Postgres and are served back from GET /media/file/:id.
+model MediaFile {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  mime      String
+  size      Int
+  data      Bytes
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
 model Interest {
   id      String            @id @default(uuid())
   slug    String            @unique
   labelFr String
   labelEn String
+  /// Groups the chip list on onboarding screen 7 (sport, culture, food, ...).
+  category String           @default("autre")
   profiles ProfileInterest[]
 }
 

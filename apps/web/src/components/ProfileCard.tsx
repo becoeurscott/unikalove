@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { BadgeCheck, Heart, MapPin, Star, X } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Avatar } from './Avatar';
 import { Spinner } from './Spinner';
@@ -68,24 +69,38 @@ export function ProfileCard({
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           whileHover={{ y: -4 }}
           className="w-52 shrink-0 overflow-hidden rounded-card border border-gray-100 bg-white shadow-sm">
-      <div className="relative flex h-44 items-center justify-center bg-gradient-to-br from-brand-soft to-brand-cream">
+      {/* The whole header opens the full profile — the card only shows a summary. */}
+      <Link
+        href={`/u/${candidate.userId}`}
+        aria-label={`Voir le profil de ${candidate.displayName}`}
+        className="relative flex h-44 items-center justify-center bg-gradient-to-br from-brand-soft to-brand-cream"
+      >
         <Avatar name={candidate.displayName} photo={candidate.photo} size={84} />
         {candidate.distanceKm != null && (
           <span className="absolute right-2 top-2 rounded-full bg-white/85 px-2 py-0.5 text-xs font-medium text-gray-600">
             à {candidate.distanceKm} km
           </span>
         )}
-      </div>
+      </Link>
       <div className="p-3">
-        <div className="flex items-center gap-1.5 text-sm font-semibold">
+        <Link
+          href={`/u/${candidate.userId}`}
+          className="flex items-center gap-1.5 text-sm font-semibold hover:text-brand"
+        >
           {candidate.displayName}, {candidate.age}
           {candidate.verified && <BadgeCheck size={16} className="text-sky-500" />}
-        </div>
+        </Link>
         {candidate.city && (
           <div className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
             <MapPin size={12} /> {candidate.city}
           </div>
         )}
+        <Link
+          href={`/u/${candidate.userId}`}
+          className="mt-1.5 block text-xs font-medium text-brand hover:underline"
+        >
+          Voir le profil
+        </Link>
         <div className="mt-2 flex flex-wrap gap-1">
           {candidate.interests.slice(0, 3).map((tag) => (
             <span key={tag} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">

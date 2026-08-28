@@ -8,7 +8,13 @@ import { LogoMark } from '@/components/Logo';
 import { StepTransition } from '@/components/Motion';
 import { Spinner } from '@/components/Spinner';
 import { api } from '@/lib/api';
-import { EMPTY_DRAFT, FIRST_STEP, TOTAL_STEPS, type OnboardingDraft } from './types';
+import {
+  EMPTY_DRAFT,
+  FIRST_STEP,
+  MIN_PHOTOS,
+  TOTAL_STEPS,
+  type OnboardingDraft,
+} from './types';
 import { Step2Name } from './steps/Step2Name';
 import { Step3Location } from './steps/Step3Location';
 import { Step4Identity } from './steps/Step4Identity';
@@ -22,7 +28,7 @@ import { Step11Safety } from './steps/Step11Safety';
 import { Step12Ready } from './steps/Step12Ready';
 
 /** Screens the user may skip; the rest must be answered to continue. */
-const OPTIONAL = new Set([6, 8, 10]);
+const OPTIONAL = new Set([8, 10]);
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -87,6 +93,9 @@ export default function OnboardingPage() {
     if (step === 3 && !draft.city.trim()) return 'Indiquez votre ville.';
     if (step === 4 && !draft.gender) return 'Choisissez une option.';
     if (step === 5 && !draft.intent) return 'Choisissez ce que vous recherchez.';
+    if (step === 6 && draft.photos.length < MIN_PHOTOS) {
+      return `Ajoutez au moins ${MIN_PHOTOS} photos — c'est ce qui fait la différence.`;
+    }
     if (step === 7 && draft.interests.length < 3) {
       return "Choisissez au moins 3 centres d'intérêt.";
     }

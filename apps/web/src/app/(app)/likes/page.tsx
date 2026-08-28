@@ -62,9 +62,10 @@ export default function LikesPage() {
       {data && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {data.map((like) => (
-            <div
+            <Link
               key={like.id}
-              className="rounded-card border border-gray-100 bg-white p-4 text-center"
+              href={`/u/${like.actor.id}`}
+              className="rounded-card border border-gray-100 bg-white p-4 text-center transition hover:border-brand/40 hover:shadow-sm"
             >
               <div className="mb-2 flex justify-center">
                 <Avatar name={like.actor.profile?.displayName ?? '?'} size={64} />
@@ -79,7 +80,7 @@ export default function LikesPage() {
               <div className="mt-1 text-xs text-brand">
                 {like.type === 'SUPERLIKE' ? 'Super like ⭐' : 'Like ❤️'}
               </div>
-            </div>
+            </Link>
           ))}
           {data.length === 0 && (
             <p className="col-span-full py-10 text-center text-sm text-gray-400">

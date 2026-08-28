@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Candidate, ProfileCard } from '@/components/ProfileCard';
 import { ProfileCardSkeleton } from '@/components/Skeleton';
 import { api } from '@/lib/api';
+import { playSound } from '@/lib/sound';
 
 export default function DiscoverPage() {
   const qc = useQueryClient();
@@ -24,7 +25,16 @@ export default function DiscoverPage() {
         method: 'POST',
         body: v,
       }),
-    onSuccess: (res) => {
+    onSuccess: (res, vars) => {
+      playSound(
+        res.match
+          ? 'match'
+          : vars.type === 'LIKE'
+            ? 'like'
+            : vars.type === 'FAVORITE'
+              ? 'save'
+              : 'pass',
+      );
       qc.invalidateQueries({ queryKey: ['counts'] });
       if (res.match) {
         setMatched({ conversationId: res.match.conversation?.id });

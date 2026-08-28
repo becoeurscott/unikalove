@@ -1,9 +1,26 @@
 'use client';
-import { ChipMulti, ChoiceRow, Field, StepHeader, inputClass } from '../ui';
+import { SearchSelect } from '@/components/SearchSelect';
+import {
+  EDUCATION_LEVELS,
+  LANGUAGES,
+  OCCUPATION_OPTIONS,
+  RELIGIONS,
+  TRAITS,
+} from '@/lib/profile-options';
+import { ChipMulti, ChoiceRow, Field, StepBody, StepHeader, StepNote, inputClass } from '../ui';
 import type { StepProps } from '../types';
 
-const LANGUAGES = ['Français', 'English', 'Wolof', 'Lingala', 'Bambara', 'Douala', 'Yoruba', 'Swahili', 'Arabe', 'Portugais'];
-const TRAITS = ['Drôle', 'Ambitieux(se)', 'Calme', 'Aventurier(ère)', 'Attentionné(e)', 'Créatif(ve)', 'Sportif(ve)', 'Croyant(e)', 'Famille d’abord', 'Curieux(se)'];
+const asOptions = (list: string[]) => list.map((v) => ({ value: v, label: v }));
+
+/** Every heading on this screen is centred like the questions above it. */
+function Group({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <span className="mb-2 block text-sm font-medium">{label}</span>
+      {children}
+    </div>
+  );
+}
 
 export function Step8Lifestyle({ draft, set }: StepProps) {
   return (
@@ -12,16 +29,38 @@ export function Step8Lifestyle({ draft, set }: StepProps) {
         title="Parlez-nous de votre quotidien"
         sub="Tout est optionnel — mais chaque détail améliore vos suggestions."
       />
-      <div className="space-y-5">
-        <div className="grid grid-cols-2 gap-3">
+      <StepBody>
+        <div className="space-y-5">
           <Field label="Profession">
-            <input
-              className={inputClass}
+            <SearchSelect
+              options={OCCUPATION_OPTIONS}
               value={draft.occupation}
-              onChange={(e) => set('occupation', e.target.value)}
-              placeholder="Enseignante"
+              onChange={(v) => set('occupation', v)}
+              placeholder="Choisissez votre profession"
+              searchPlaceholder="Rechercher un métier…"
             />
           </Field>
+
+          <Field label="Niveau d'études">
+            <SearchSelect
+              options={asOptions(EDUCATION_LEVELS)}
+              value={draft.education}
+              onChange={(v) => set('education', v)}
+              placeholder="Choisissez un niveau"
+              searchPlaceholder="Rechercher…"
+            />
+          </Field>
+
+          <Field label="Religion">
+            <SearchSelect
+              options={asOptions(RELIGIONS)}
+              value={draft.religion}
+              onChange={(v) => set('religion', v)}
+              placeholder="Choisissez une option"
+              searchPlaceholder="Rechercher…"
+            />
+          </Field>
+
           <Field label="Taille (cm)">
             <input
               type="number"
@@ -33,86 +72,70 @@ export function Step8Lifestyle({ draft, set }: StepProps) {
               placeholder="170"
             />
           </Field>
-        </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Études">
-            <input
-              className={inputClass}
-              value={draft.education}
-              onChange={(e) => set('education', e.target.value)}
-              placeholder="Licence"
+          <Group label="Tabac">
+            <ChoiceRow
+              columns={1}
+              value={draft.smoking}
+              onChange={(v) => set('smoking', v)}
+              options={[
+                { value: 'never', label: 'Jamais' },
+                { value: 'socially', label: 'Occasionnellement' },
+                { value: 'regularly', label: 'Régulièrement' },
+              ]}
             />
-          </Field>
-          <Field label="Religion">
-            <input
-              className={inputClass}
-              value={draft.religion}
-              onChange={(e) => set('religion', e.target.value)}
-              placeholder="Chrétienne"
+          </Group>
+
+          <Group label="Alcool">
+            <ChoiceRow
+              columns={1}
+              value={draft.drinking}
+              onChange={(v) => set('drinking', v)}
+              options={[
+                { value: 'never', label: 'Jamais' },
+                { value: 'socially', label: 'Occasionnellement' },
+                { value: 'regularly', label: 'Régulièrement' },
+              ]}
             />
-          </Field>
+          </Group>
+
+          <Group label="Enfants">
+            <ChoiceRow
+              columns={1}
+              value={draft.children}
+              onChange={(v) => set('children', v)}
+              options={[
+                { value: 'have', label: "J'en ai" },
+                { value: 'want', label: "J'en veux" },
+                { value: 'none', label: "Je n'en veux pas" },
+              ]}
+            />
+          </Group>
+
+          <Group label="Langues parlées">
+            <ChipMulti
+              max={5}
+              values={draft.languages}
+              onChange={(v) => set('languages', v)}
+              options={asOptions(LANGUAGES)}
+            />
+          </Group>
+
+          <Group label="Trois mots qui vous décrivent">
+            <ChipMulti
+              max={3}
+              values={draft.traits}
+              onChange={(v) => set('traits', v)}
+              options={asOptions(TRAITS)}
+            />
+          </Group>
         </div>
 
-        <div>
-          <span className="mb-1.5 block text-sm font-medium">Tabac</span>
-          <ChoiceRow
-            value={draft.smoking}
-            onChange={(v) => set('smoking', v)}
-            options={[
-              { value: 'never', label: 'Jamais' },
-              { value: 'socially', label: 'Occasionnellement' },
-              { value: 'regularly', label: 'Régulièrement' },
-            ]}
-          />
-        </div>
-
-        <div>
-          <span className="mb-1.5 block text-sm font-medium">Alcool</span>
-          <ChoiceRow
-            value={draft.drinking}
-            onChange={(v) => set('drinking', v)}
-            options={[
-              { value: 'never', label: 'Jamais' },
-              { value: 'socially', label: 'Occasionnellement' },
-              { value: 'regularly', label: 'Régulièrement' },
-            ]}
-          />
-        </div>
-
-        <div>
-          <span className="mb-1.5 block text-sm font-medium">Enfants</span>
-          <ChoiceRow
-            value={draft.children}
-            onChange={(v) => set('children', v)}
-            options={[
-              { value: 'have', label: "J'en ai" },
-              { value: 'want', label: "J'en veux" },
-              { value: 'none', label: "Je n'en veux pas" },
-            ]}
-          />
-        </div>
-
-        <div>
-          <span className="mb-1.5 block text-sm font-medium">Langues parlées</span>
-          <ChipMulti
-            max={5}
-            values={draft.languages}
-            onChange={(v) => set('languages', v)}
-            options={LANGUAGES.map((l) => ({ value: l, label: l }))}
-          />
-        </div>
-
-        <div>
-          <span className="mb-1.5 block text-sm font-medium">Trois mots qui vous décrivent</span>
-          <ChipMulti
-            max={3}
-            values={draft.traits}
-            onChange={(v) => set('traits', v)}
-            options={TRAITS.map((t) => ({ value: t, label: t }))}
-          />
-        </div>
-      </div>
+        <StepNote>
+          Ces informations apparaissent sur votre profil. Vous pouvez en masquer une partie plus
+          tard depuis vos réglages.
+        </StepNote>
+      </StepBody>
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { BadgeCheck } from 'lucide-react';
+import Link from 'next/link';
 import { Avatar } from '@/components/Avatar';
 import { GridSkeleton } from '@/components/Skeleton';
 import { api } from '@/lib/api';
@@ -37,7 +38,11 @@ export default function BookmarksPage() {
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {(favorites ?? []).map((f) => (
-          <div key={f.id} className="rounded-card border border-gray-100 bg-white p-4 text-center">
+          <Link
+            key={f.id}
+            href={`/u/${f.target.id}`}
+            className="rounded-card border border-gray-100 bg-white p-4 text-center transition hover:border-brand/40 hover:shadow-sm"
+          >
             <div className="mb-2 flex justify-center">
               <Avatar
                 name={f.target.profile?.displayName ?? '?'}
@@ -50,7 +55,7 @@ export default function BookmarksPage() {
               {f.target.profile?.verified && <BadgeCheck size={14} className="text-sky-500" />}
             </div>
             <div className="text-xs text-gray-400">{f.target.profile?.city}</div>
-          </div>
+          </Link>
         ))}
         {favorites?.length === 0 && (
           <p className="col-span-full py-10 text-center text-sm text-gray-400">

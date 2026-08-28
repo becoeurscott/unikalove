@@ -1,22 +1,9 @@
 import { Gender, PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { INTEREST_CATALOG } from '../src/modules/profiles/interests.catalog';
 
 const prisma = new PrismaClient();
 
-const INTERESTS = [
-  ['travel', 'Voyage', 'Travel'],
-  ['music', 'Musique', 'Music'],
-  ['cooking', 'Cuisine', 'Cooking'],
-  ['sports', 'Sport', 'Sports'],
-  ['reading', 'Lecture', 'Reading'],
-  ['movies', 'Cinéma', 'Movies'],
-  ['dancing', 'Danse', 'Dancing'],
-  ['photography', 'Photographie', 'Photography'],
-  ['fashion', 'Mode', 'Fashion'],
-  ['entrepreneurship', 'Entrepreneuriat', 'Entrepreneurship'],
-  ['faith', 'Foi', 'Faith'],
-  ['fitness', 'Fitness', 'Fitness'],
-];
 
 const CITIES = [
   { city: 'Douala', country: 'Cameroun', lat: 4.0511, lng: 9.7679 },
@@ -49,11 +36,11 @@ async function main() {
   console.log('Seeding UnikaLove…');
 
   const interests = await Promise.all(
-    INTERESTS.map(([slug, labelFr, labelEn]) =>
+    INTEREST_CATALOG.map(({ slug, labelFr, labelEn, category }) =>
       prisma.interest.upsert({
         where: { slug },
-        create: { slug, labelFr, labelEn },
-        update: { labelFr, labelEn },
+        create: { slug, labelFr, labelEn, category },
+        update: { labelFr, labelEn, category },
       }),
     ),
   );

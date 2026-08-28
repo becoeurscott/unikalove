@@ -80,3 +80,31 @@ export async function api<T = unknown>(
   if (!res.ok) throw new ApiError(res.status, (json as any).message ?? 'Request failed');
   return json as T;
 }
+
+/**
+ * Multipart POST — the JSON helper above cannot be reused because setting a
+ * content-type by hand strips the multipart boundary the browser generates.
+ * Used by the photo upload fallback, which streams the file through the API.
+ */
+export async function apiUpload<T = unknown>(
+  path: string,
+  file: File,
+  field = 'file',
+  _retried = false,
+): Promise<T> {
+  const token = getToken();
+  const form = new FormData();
+  form.append(field, file);
+  const res = await fetch(API_URL + path, {
+    method: 'POST',
+    headers: token ? { authorization: `Bearer ${token}` } : undefined,
+    body: form,
+  });
+  if (res.status === 401 && !_retried) {
+    const fresh = await refreshToken();
+    if (fresh) return apiUpload<T>(path, file, field, true);
+  }
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError(res.status, (json as any).message ?? "L'envoi a échoué");
+  return json as T;
+}

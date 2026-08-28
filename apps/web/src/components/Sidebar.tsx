@@ -13,12 +13,15 @@ import {
   Sparkles,
   User,
   Users,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/lib/auth';
+import { isSoundEnabled, playSound, setSoundEnabled } from '@/lib/sound';
 import { Logo } from './Logo';
 
 interface Counts {
@@ -47,6 +50,25 @@ export function Sidebar() {
     queryFn: () => api<Counts>('/matching/counts'),
     refetchInterval: 30_000,
   });
+
+  const [soundOn, setSoundOn] = useState(true);
+  useEffect(() => setSoundOn(isSoundEnabled()), []);
+
+  /**
+   * The badges are the app's notification surface, so a rise in any of them
+   * plays a cue. The first poll only seeds the baseline — otherwise every page
+   * load would announce counts the user has already seen.
+   */
+  const previous = useRef<Counts | null>(null);
+  useEffect(() => {
+    if (!counts) return;
+    const before = previous.current;
+    previous.current = counts;
+    if (!before) return;
+    if (counts.unreadMessages > before.unreadMessages) playSound('message');
+    else if (counts.matches > before.matches) playSound('match');
+    else if (counts.likesReceived > before.likesReceived) playSound('notify');
+  }, [counts]);
 
   const NAV = [
     { href: '/', label: 'Tableau de bord', Icon: LayoutGrid },
@@ -91,6 +113,19 @@ export function Sidebar() {
             </Link>
           );
         })}
+        <button
+          onClick={() => {
+            const next = !soundOn;
+            setSoundEnabled(next);
+            setSoundOn(next);
+            if (next) playSound('notify');
+          }}
+          aria-pressed={soundOn}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+        >
+          {soundOn ? <Volume2 size={18} /> : <VolumeX size={18} />}
+          {soundOn ? 'Sons activés' : 'Sons coupés'}
+        </button>
         <button
           onClick={logout}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"

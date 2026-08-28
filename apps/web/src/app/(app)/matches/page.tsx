@@ -47,13 +47,15 @@ export default function MatchesPage() {
           const other = m.userA.id === user?.id ? m.userB : m.userA;
           return (
             <div key={m.id} className="rounded-card border border-gray-100 bg-white p-4 text-center">
-              <div className="mb-2 flex justify-center">
-                <Avatar name={other.profile?.displayName ?? '?'} size={64} />
-              </div>
-              <div className="flex items-center justify-center gap-1 text-sm font-semibold">
-                {other.profile?.displayName}
-                {other.profile?.verified && <BadgeCheck size={14} className="text-sky-500" />}
-              </div>
+              <Link href={`/u/${other.id}`} className="block">
+                <div className="mb-2 flex justify-center">
+                  <Avatar name={other.profile?.displayName ?? '?'} size={64} />
+                </div>
+                <div className="flex items-center justify-center gap-1 text-sm font-semibold hover:text-brand">
+                  {other.profile?.displayName}
+                  {other.profile?.verified && <BadgeCheck size={14} className="text-sky-500" />}
+                </div>
+              </Link>
               <div className="text-xs text-gray-400">
                 Match du {new Date(m.matchedAt).toLocaleDateString('fr')}
               </div>

@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { getSocket } from '@/lib/socket';
+import { playSound } from '@/lib/sound';
 
 interface Message {
   id: string;
@@ -69,6 +70,8 @@ export default function ChatPage() {
     socket.emit('read', { conversationId });
 
     const onNew = (msg: Message & { conversationId?: string }) => {
+      // Only the other side's messages chime; the echo of your own is silent.
+      if (msg.senderId !== user?.id) playSound('message');
       setMessages((m) => (m.some((x) => x.id === msg.id) ? m : [...m, msg]));
       setOtherTyping(false);
       socket.emit('read', { conversationId });
@@ -114,6 +117,7 @@ export default function ChatPage() {
       (msg: Message) => msg?.id && setMessages((m) => (m.some((x) => x.id === msg.id) ? m : [...m, msg])),
     );
     socket.emit('typing', { conversationId, isTyping: false });
+    playSound('sent');
     setDraft('');
   }
 

@@ -41,6 +41,9 @@ services:
         sync: false
       - key: APP_URL
         sync: false
+      # Absolute base for photo URLs served by the API (…/api/v1).
+      - key: PUBLIC_API_URL
+        sync: false
       # AI + payments: paste values in the dashboard (never commit them).
       - key: OPENROUTER_API_KEY
         sync: false
