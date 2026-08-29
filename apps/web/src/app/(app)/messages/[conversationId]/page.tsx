@@ -42,7 +42,10 @@ export default function ChatPage() {
           otherUserId: string;
           online: boolean;
           lastSeenAt: string | null;
-          match: { userA: { id: string; profile: { displayName: string } | null }; userB: { id: string; profile: { displayName: string } | null } };
+          match: {
+            userA: { id: string; profile: { displayName: string; photos: { url: string }[] } | null };
+            userB: { id: string; profile: { displayName: string; photos: { url: string }[] } | null };
+          };
         }[]
       >('/conversations'),
   });
@@ -164,7 +167,11 @@ export default function ChatPage() {
         </Link>
         {other && (
           <span className="relative shrink-0">
-            <Avatar name={other.profile?.displayName ?? '?'} size={38} />
+            <Avatar
+              name={other.profile?.displayName ?? '?'}
+              photo={other.profile?.photos?.[0]?.url}
+              size={38}
+            />
           </span>
         )}
         <div className="min-w-0 flex-1">

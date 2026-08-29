@@ -9,12 +9,18 @@ import { GridSkeleton } from '@/components/Skeleton';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
+interface MatchProfile {
+  displayName: string;
+  verified: boolean;
+  photos: { url: string }[];
+}
+
 interface MatchRow {
   id: string;
   matchedAt: string;
   conversation: { id: string } | null;
-  userA: { id: string; profile: { displayName: string; verified: boolean } | null };
-  userB: { id: string; profile: { displayName: string; verified: boolean } | null };
+  userA: { id: string; profile: MatchProfile | null };
+  userB: { id: string; profile: MatchProfile | null };
 }
 
 export default function MatchesPage() {
@@ -51,7 +57,11 @@ export default function MatchesPage() {
               <Link href={`/u/${other.id}`} className="block">
                 <div className="mb-2 flex justify-center">
                   <span className="relative inline-block">
-                    <Avatar name={other.profile?.displayName ?? '?'} size={64} />
+                    <Avatar
+                      name={other.profile?.displayName ?? '?'}
+                      photo={other.profile?.photos?.[0]?.url}
+                      size={64}
+                    />
                     <PresenceDot userId={other.id} overlay size={12} />
                   </span>
                 </div>

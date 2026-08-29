@@ -13,7 +13,12 @@ interface LikeRow {
   createdAt: string;
   actor: {
     id: string;
-    profile: { displayName: string; city: string | null; verified: boolean } | null;
+    profile: {
+      displayName: string;
+      city: string | null;
+      verified: boolean;
+      photos: { url: string }[];
+    } | null;
   };
 }
 
@@ -68,7 +73,11 @@ export default function LikesPage() {
               className="rounded-card border border-gray-100 bg-white p-4 text-center transition hover:border-brand/40 hover:shadow-sm"
             >
               <div className="mb-2 flex justify-center">
-                <Avatar name={like.actor.profile?.displayName ?? '?'} size={64} />
+                <Avatar
+                  name={like.actor.profile?.displayName ?? '?'}
+                  photo={like.actor.profile?.photos?.[0]?.url}
+                  size={64}
+                />
               </div>
               <div className="flex items-center justify-center gap-1 text-sm font-semibold">
                 {like.actor.profile?.displayName}

@@ -86,8 +86,30 @@ export class MatchingService {
       where: { status: 'ACTIVE', OR: [{ userAId: userId }, { userBId: userId }] },
       include: {
         conversation: { select: { id: true } },
-        userA: { select: { id: true, profile: { select: { displayName: true, verified: true } } } },
-        userB: { select: { id: true, profile: { select: { displayName: true, verified: true } } } },
+        userA: {
+          select: {
+            id: true,
+            profile: {
+              select: {
+                displayName: true,
+                verified: true,
+                photos: { where: { deletedAt: null }, orderBy: { position: 'asc' }, take: 1 },
+              },
+            },
+          },
+        },
+        userB: {
+          select: {
+            id: true,
+            profile: {
+              select: {
+                displayName: true,
+                verified: true,
+                photos: { where: { deletedAt: null }, orderBy: { position: 'asc' }, take: 1 },
+              },
+            },
+          },
+        },
       },
       orderBy: { matchedAt: 'desc' },
     });
@@ -164,7 +186,17 @@ export class MatchingService {
       },
       include: {
         actor: {
-          select: { id: true, profile: { select: { displayName: true, city: true, verified: true } } },
+          select: {
+            id: true,
+            profile: {
+              select: {
+                displayName: true,
+                city: true,
+                verified: true,
+                photos: { where: { deletedAt: null }, orderBy: { position: 'asc' }, take: 1 },
+              },
+            },
+          },
         },
       },
       orderBy: { createdAt: 'desc' },

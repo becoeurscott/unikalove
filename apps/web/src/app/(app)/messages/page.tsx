@@ -11,8 +11,8 @@ import { useAuth } from '@/lib/auth';
 interface ConversationRow {
   id: string;
   match: {
-    userA: { id: string; profile: { displayName: string } | null };
-    userB: { id: string; profile: { displayName: string } | null };
+    userA: { id: string; profile: { displayName: string; photos: { url: string }[] } | null };
+    userB: { id: string; profile: { displayName: string; photos: { url: string }[] } | null };
   };
   messages: { content: string; senderId: string; createdAt: string; readAt: string | null }[];
   /** Served with the row so the badge is right before any socket event lands. */
@@ -49,7 +49,11 @@ export default function MessagesPage() {
               className="flex items-center gap-3 p-4 transition hover:bg-gray-50"
             >
               <span className="relative shrink-0">
-                <Avatar name={other.profile?.displayName ?? '?'} size={44} />
+                <Avatar
+                  name={other.profile?.displayName ?? '?'}
+                  photo={other.profile?.photos?.[0]?.url}
+                  size={44}
+                />
                 <PresenceDot
                   userId={other.id}
                   fallback={{ online: c.online, lastSeenAt: c.lastSeenAt }}

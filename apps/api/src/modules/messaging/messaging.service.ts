@@ -46,8 +46,28 @@ export class MessagingService {
       include: {
         match: {
           include: {
-            userA: { select: { id: true, profile: { select: { displayName: true } } } },
-            userB: { select: { id: true, profile: { select: { displayName: true } } } },
+            userA: {
+              select: {
+                id: true,
+                profile: {
+                  select: {
+                    displayName: true,
+                    photos: { where: { deletedAt: null }, orderBy: { position: 'asc' }, take: 1 },
+                  },
+                },
+              },
+            },
+            userB: {
+              select: {
+                id: true,
+                profile: {
+                  select: {
+                    displayName: true,
+                    photos: { where: { deletedAt: null }, orderBy: { position: 'asc' }, take: 1 },
+                  },
+                },
+              },
+            },
           },
         },
         messages: { orderBy: { createdAt: 'desc' }, take: 1, where: { deletedAt: null } },
