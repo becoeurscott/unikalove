@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { Avatar } from '@/components/Avatar';
+import { PresenceDot } from '@/components/PresenceDot';
 import { ListSkeleton } from '@/components/Skeleton';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -14,6 +15,10 @@ interface ConversationRow {
     userB: { id: string; profile: { displayName: string } | null };
   };
   messages: { content: string; senderId: string; createdAt: string; readAt: string | null }[];
+  /** Served with the row so the badge is right before any socket event lands. */
+  otherUserId: string;
+  online: boolean;
+  lastSeenAt: string | null;
 }
 
 export default function MessagesPage() {
@@ -43,7 +48,14 @@ export default function MessagesPage() {
               href={`/messages/${c.id}`}
               className="flex items-center gap-3 p-4 transition hover:bg-gray-50"
             >
-              <Avatar name={other.profile?.displayName ?? '?'} size={44} />
+              <span className="relative shrink-0">
+                <Avatar name={other.profile?.displayName ?? '?'} size={44} />
+                <PresenceDot
+                  userId={other.id}
+                  fallback={{ online: c.online, lastSeenAt: c.lastSeenAt }}
+                  overlay
+                />
+              </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
                   <span className={`text-sm ${unread ? 'font-bold' : 'font-semibold'}`}>

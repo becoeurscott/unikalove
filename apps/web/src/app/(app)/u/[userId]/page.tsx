@@ -25,6 +25,7 @@ import { Avatar } from '@/components/Avatar';
 import { Spinner } from '@/components/Spinner';
 import { api, ApiError } from '@/lib/api';
 import { playSound } from '@/lib/sound';
+import { PresenceLabel } from '@/components/PresenceDot';
 
 interface PublicProfile {
   userId: string;
@@ -53,6 +54,8 @@ interface PublicProfile {
   likesYou: boolean;
   matched: boolean;
   conversationId: string | null;
+  online: boolean;
+  lastSeenAt: string | null;
 }
 
 const INTENT: Record<string, string> = {
@@ -200,6 +203,12 @@ export default function PublicProfilePage() {
               {p.age != null && <span className="font-semibold text-gray-500">{p.age}</span>}
               {p.verified && <BadgeCheck size={20} className="text-sky-500" />}
             </h1>
+            <div className="mt-1.5">
+              <PresenceLabel
+                userId={p.userId}
+                fallback={{ online: p.online, lastSeenAt: p.lastSeenAt }}
+              />
+            </div>
             {(p.city || p.country) && (
               <div className="mt-1 flex items-center gap-1.5 text-sm text-gray-500">
                 <MapPin size={14} />

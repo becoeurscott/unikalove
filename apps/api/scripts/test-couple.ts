@@ -1,0 +1,191 @@
+/**
+ * Creates (or resets) two fully-onboarded accounts that match each other, for
+ * manually exercising chat and presence.
+ *
+ * Both live on @test.unikalove.com so they can be removed in one query, and the
+ * password is the same for both to keep manual testing quick. Never point this
+ * at production.
+ *
+ *   npx ts-node scripts/test-couple.ts
+ */
+import { PrismaClient, Gender } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
+
+const prisma = new PrismaClient();
+
+const PASSWORD = 'TestPass123!';
+const DOMAIN = '@test.unikalove.com';
+
+interface Person {
+  email: string;
+  displayName: string;
+  gender: Gender;
+  wants: Gender;
+  birthDate: string;
+  bio: string;
+  occupation: string;
+  education: string;
+  religion: string;
+  heightCm: number;
+  languages: string[];
+  traits: string[];
+  interests: string[];
+}
+
+const PEOPLE: Person[] = [
+  {
+    email: `amina${DOMAIN}`,
+    displayName: 'Amina',
+    gender: 'FEMALE',
+    wants: 'MALE',
+    birthDate: '1997-03-14',
+    bio: "Enseignante à Douala. J'aime la cuisine, les longues discussions et les week-ends à la plage. Je cherche quelqu'un de sincère.",
+    occupation: 'Enseignant(e)',
+    education: 'Master',
+    religion: 'Christianisme — Catholique',
+    heightCm: 168,
+    languages: ['Français', 'English', 'Douala'],
+    traits: ['Drôle', 'Attentionné(e)', 'Curieux(se)'],
+    interests: ['cuisine', 'afrobeats', 'plage', 'lecture', 'famille'],
+  },
+  {
+    email: `moussa${DOMAIN}`,
+    displayName: 'Moussa',
+    gender: 'MALE',
+    wants: 'FEMALE',
+    birthDate: '1994-08-02',
+    bio: "Développeur, fan de football et de bonne musique. Toujours partant pour découvrir un nouveau restaurant ou une nouvelle ville.",
+    occupation: 'Développeur(se)',
+    education: "École d'ingénieur",
+    religion: 'Christianisme — Protestant',
+    heightCm: 181,
+    languages: ['Français', 'English'],
+    traits: ['Ambitieux(se)', 'Drôle', 'Sportif(ve)'],
+    interests: ['football', 'afrobeats', 'cuisine', 'code', 'voyage'],
+  },
+];
+
+/** Douala, so the two are a few km apart rather than on top of each other. */
+const SPOTS = [
+  { city: 'Douala', country: 'Cameroun', lat: 4.0511, lng: 9.7679 },
+  { city: 'Douala', country: 'Cameroun', lat: 4.0721, lng: 9.7409 },
+];
+
+async function upsertPerson(person: Person, spot: (typeof SPOTS)[number]) {
+  const passwordHash = await bcrypt.hash(PASSWORD, 10);
+  const user = await prisma.user.upsert({
+    where: { email: person.email },
+    create: {
+      email: person.email,
+      passwordHash,
+      emailVerifiedAt: new Date(),
+      acceptedTermsAt: new Date(),
+    },
+    update: { passwordHash, status: 'ACTIVE', deletedAt: null },
+  });
+
+  const data = {
+    displayName: person.displayName,
+    bio: person.bio,
+    gender: person.gender,
+    birthDate: new Date(person.birthDate),
+    city: spot.city,
+    country: spot.country,
+    latitude: spot.lat,
+    longitude: spot.lng,
+    intent: 'serious',
+    occupation: person.occupation,
+    education: person.education,
+    religion: person.religion,
+    heightCm: person.heightCm,
+    smoking: 'never',
+    drinking: 'socially',
+    children: 'want',
+    languages: person.languages,
+    traits: person.traits,
+    // 12 = finished, so the app does not bounce them back into the wizard.
+    onboardingStep: 12,
+    completeness: 100,
+    verified: true,
+  };
+  const profile = await prisma.profile.upsert({
+    where: { userId: user.id },
+    create: { userId: user.id, ...data },
+    update: data,
+  });
+
+  await prisma.preference.upsert({
+    where: { userId: user.id },
+    create: { userId: user.id, minAge: 21, maxAge: 45, maxDistanceKm: 100, genders: [person.wants] },
+    update: { genders: [person.wants], maxDistanceKm: 100 },
+  });
+
+  const interests = await prisma.interest.findMany({ where: { slug: { in: person.interests } } });
+  await prisma.profileInterest.deleteMany({ where: { profileId: profile.id } });
+  await prisma.profileInterest.createMany({
+    data: interests.map((i) => ({ profileId: profile.id, interestId: i.id })),
+  });
+
+  return { user, profile };
+}
+
+async function main() {
+  const [a, b] = await Promise.all([
+    upsertPerson(PEOPLE[0], SPOTS[0]),
+    upsertPerson(PEOPLE[1], SPOTS[1]),
+  ]);
+
+  // Mutual likes, so the pair is already matched and can talk immediately.
+  for (const [actor, target] of [
+    [a.user.id, b.user.id],
+    [b.user.id, a.user.id],
+  ]) {
+    await prisma.swipe.upsert({
+      where: { actorId_targetId: { actorId: actor, targetId: target } },
+      create: { actorId: actor, targetId: target, type: 'LIKE' },
+      update: { type: 'LIKE' },
+    });
+  }
+
+  // Match rows are keyed on the ordered pair, so look both ways before creating.
+  let match = await prisma.match.findFirst({
+    where: {
+      OR: [
+        { userAId: a.user.id, userBId: b.user.id },
+        { userAId: b.user.id, userBId: a.user.id },
+      ],
+    },
+    include: { conversation: true },
+  });
+  if (!match) {
+    match = await prisma.match.create({
+      data: { userAId: a.user.id, userBId: b.user.id, status: 'ACTIVE' },
+      include: { conversation: true },
+    });
+  } else if (match.status !== 'ACTIVE') {
+    match = await prisma.match.update({
+      where: { id: match.id },
+      data: { status: 'ACTIVE' },
+      include: { conversation: true },
+    });
+  }
+
+  const conversation =
+    match.conversation ?? (await prisma.conversation.create({ data: { matchId: match.id } }));
+
+  // A clean thread every run, so message counts in a test are unambiguous.
+  await prisma.message.deleteMany({ where: { conversationId: conversation.id } });
+
+  console.log('\nTest couple ready — password for both: ' + PASSWORD);
+  for (const p of PEOPLE) console.log(`  ${p.displayName.padEnd(7)} ${p.email}`);
+  console.log(`\n  match          ${match.id}`);
+  console.log(`  conversation   ${conversation.id}`);
+  console.log(`  chat URL       /messages/${conversation.id}\n`);
+}
+
+main()
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  })
+  .finally(() => prisma.$disconnect());

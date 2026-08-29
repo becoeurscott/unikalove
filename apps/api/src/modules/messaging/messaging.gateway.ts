@@ -1,4 +1,4 @@
-import { Logger, UnauthorizedException } from '@nestjs/common';
+import { Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import {
   ConnectedSocket,
@@ -12,20 +12,46 @@ import {
 import { MessageType } from '@prisma/client';
 import { Server, Socket } from 'socket.io';
 import { MessagingService } from './messaging.service';
+import { PresenceService } from './presence.service';
 
 interface AuthedSocket extends Socket {
   data: { userId: string };
 }
 
 @WebSocketGateway({ namespace: '/rt', cors: { origin: true, credentials: true } })
-export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class MessagingGateway
+  implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit, OnModuleDestroy
+{
   @WebSocketServer() server: Server;
   private logger = new Logger('MessagingGateway');
+  private heartbeat?: NodeJS.Timeout;
 
   constructor(
     private jwt: JwtService,
     private messaging: MessagingService,
+    private presence: PresenceService,
   ) {}
+
+  /** Refreshes the Redis presence mirror for users who are connected but idle;
+   *  without it their key would lapse and they would appear to go offline. */
+  onModuleInit() {
+    this.heartbeat = setInterval(() => void this.presence.heartbeat(), 30_000);
+  }
+
+  onModuleDestroy() {
+    if (this.heartbeat) clearInterval(this.heartbeat);
+  }
+
+  /** Tells this user's matches that their status changed, and — on connect —
+   *  tells the arriving user which of their matches are already online. */
+  private async broadcastPresence(userId: string, online: boolean) {
+    const partners = await this.messaging.matchPartnerIds(userId);
+    const payload = { userId, online, lastSeenAt: online ? null : new Date().toISOString() };
+    for (const partnerId of partners) {
+      this.server.to(`user:${partnerId}`).emit('presence', payload);
+    }
+    return partners;
+  }
 
   async handleConnection(client: AuthedSocket) {
     try {
@@ -35,13 +61,35 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
       const payload = await this.jwt.verifyAsync(token);
       client.data.userId = payload.sub;
       client.join(`user:${payload.sub}`);
+
+      const becameOnline = await this.presence.connect(payload.sub);
+      const partners = becameOnline
+        ? await this.broadcastPresence(payload.sub, true)
+        : await this.messaging.matchPartnerIds(payload.sub);
+
+      // Seed the arriving client so it does not have to wait for someone else
+      // to change state before its badges are correct.
+      const statuses = await this.presence.statusFor(partners);
+      client.emit(
+        'presence.sync',
+        [...statuses.entries()].map(([id, s]) => ({
+          userId: id,
+          online: s.online,
+          lastSeenAt: s.lastSeenAt?.toISOString() ?? null,
+        })),
+      );
     } catch {
       client.disconnect(true);
     }
   }
 
-  handleDisconnect(client: AuthedSocket) {
-    this.logger.debug(`disconnected ${client.data?.userId ?? 'anon'}`);
+  async handleDisconnect(client: AuthedSocket) {
+    const userId = client.data?.userId;
+    this.logger.debug(`disconnected ${userId ?? 'anon'}`);
+    if (!userId) return;
+    if (await this.presence.disconnect(userId)) {
+      await this.broadcastPresence(userId, false);
+    }
   }
 
   @SubscribeMessage('conversation.join')

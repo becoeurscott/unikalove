@@ -9,6 +9,8 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { getSocket } from '@/lib/socket';
 import { playSound } from '@/lib/sound';
+import { PresenceLabel } from '@/components/PresenceDot';
+import { Avatar } from '@/components/Avatar';
 
 interface Message {
   id: string;
@@ -28,6 +30,25 @@ export default function ChatPage() {
   const [otherTyping, setOtherTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Who this thread is with, plus their presence. Shares the cache with the
+  // conversation list, so arriving from there costs no extra request.
+  const conversations = useQuery({
+    queryKey: ['conversations'],
+    queryFn: () =>
+      api<
+        {
+          id: string;
+          otherUserId: string;
+          online: boolean;
+          lastSeenAt: string | null;
+          match: { userA: { id: string; profile: { displayName: string } | null }; userB: { id: string; profile: { displayName: string } | null } };
+        }[]
+      >('/conversations'),
+  });
+  const thread = conversations.data?.find((c) => c.id === conversationId);
+  const other =
+    thread && (thread.match.userA.id === user?.id ? thread.match.userB : thread.match.userA);
 
   const history = useQuery({
     queryKey: ['messages', conversationId],
@@ -141,8 +162,26 @@ export default function ChatPage() {
         <Link href="/messages" className="rounded-lg p-2 hover:bg-gray-100">
           <ArrowLeft size={18} />
         </Link>
-        <h1 className="text-xl font-bold">Conversation</h1>
-        {otherTyping && <span className="text-sm text-brand">écrit…</span>}
+        {other && (
+          <span className="relative shrink-0">
+            <Avatar name={other.profile?.displayName ?? '?'} size={38} />
+          </span>
+        )}
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-lg font-bold">
+            {other?.profile?.displayName ?? 'Conversation'}
+          </h1>
+          {otherTyping ? (
+            <span className="text-xs font-medium text-brand">écrit…</span>
+          ) : (
+            <PresenceLabel
+              userId={other?.id}
+              fallback={
+                thread ? { online: thread.online, lastSeenAt: thread.lastSeenAt } : undefined
+              }
+            />
+          )}
+        </div>
       </div>
 
       <div className="flex-1 space-y-2 overflow-y-auto rounded-card border border-gray-100 bg-white p-4">

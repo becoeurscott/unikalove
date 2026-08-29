@@ -3,12 +3,14 @@ import { MessageType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { cursorArgs, toPage } from '../../common/pagination';
 import { ModerationService } from '../safety/moderation.service';
+import { PresenceService } from './presence.service';
 
 @Injectable()
 export class MessagingService {
   constructor(
     private prisma: PrismaService,
     private moderation: ModerationService,
+    private presence: PresenceService,
   ) {}
 
   /** Throws unless the user is one of the two match members. */
@@ -26,8 +28,18 @@ export class MessagingService {
     return { conv, otherUserId: userAId === userId ? userBId : userAId };
   }
 
+  /** The other side of every active match — who should hear this user's
+   *  presence changes, and whose presence this user is shown. */
+  async matchPartnerIds(userId: string): Promise<string[]> {
+    const matches = await this.prisma.match.findMany({
+      where: { status: 'ACTIVE', OR: [{ userAId: userId }, { userBId: userId }] },
+      select: { userAId: true, userBId: true },
+    });
+    return matches.map((m) => (m.userAId === userId ? m.userBId : m.userAId));
+  }
+
   async listConversations(userId: string) {
-    return this.prisma.conversation.findMany({
+    const conversations = await this.prisma.conversation.findMany({
       where: {
         match: { status: 'ACTIVE', OR: [{ userAId: userId }, { userBId: userId }] },
       },
@@ -41,6 +53,23 @@ export class MessagingService {
         messages: { orderBy: { createdAt: 'desc' }, take: 1, where: { deletedAt: null } },
       },
       orderBy: { updatedAt: 'desc' },
+    });
+
+    // The list is the main place presence is read, so it ships with the rows
+    // rather than making the client fan out one request per conversation.
+    const partnerIds = conversations.map((c) =>
+      c.match.userAId === userId ? c.match.userBId : c.match.userAId,
+    );
+    const statuses = await this.presence.statusFor(partnerIds);
+    return conversations.map((c) => {
+      const otherId = c.match.userAId === userId ? c.match.userBId : c.match.userAId;
+      const status = statuses.get(otherId);
+      return {
+        ...c,
+        otherUserId: otherId,
+        online: status?.online ?? false,
+        lastSeenAt: status?.lastSeenAt ?? null,
+      };
     });
   }
 

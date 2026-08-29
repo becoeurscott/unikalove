@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { PageTransition } from '@/components/Motion';
 import { Sidebar } from '@/components/Sidebar';
+import { PresenceProvider } from '@/lib/presence';
 import { LoadingScreen } from '@/components/Spinner';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -36,6 +37,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!user) return null;
 
   return (
+    <PresenceProvider>
     <div className="flex">
       <Sidebar />
       {/*
@@ -47,5 +49,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <PageTransition>{children}</PageTransition>
       </main>
     </div>
+    </PresenceProvider>
   );
 }

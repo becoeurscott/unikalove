@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BadgeCheck, MessageCircle, UserX } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar } from '@/components/Avatar';
+import { PresenceDot } from '@/components/PresenceDot';
 import { GridSkeleton } from '@/components/Skeleton';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -49,7 +50,10 @@ export default function MatchesPage() {
             <div key={m.id} className="rounded-card border border-gray-100 bg-white p-4 text-center">
               <Link href={`/u/${other.id}`} className="block">
                 <div className="mb-2 flex justify-center">
-                  <Avatar name={other.profile?.displayName ?? '?'} size={64} />
+                  <span className="relative inline-block">
+                    <Avatar name={other.profile?.displayName ?? '?'} size={64} />
+                    <PresenceDot userId={other.id} overlay size={12} />
+                  </span>
                 </div>
                 <div className="flex items-center justify-center gap-1 text-sm font-semibold hover:text-brand">
                   {other.profile?.displayName}

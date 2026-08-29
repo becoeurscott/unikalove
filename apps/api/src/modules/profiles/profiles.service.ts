@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { PresenceService } from '../messaging/presence.service';
 import { ModerationService } from '../safety/moderation.service';
 import { INTEREST_CATALOG, INTEREST_CATEGORIES } from './interests.catalog';
 import {
@@ -32,6 +33,7 @@ export class ProfilesService implements OnModuleInit {
   constructor(
     private prisma: PrismaService,
     private moderation: ModerationService,
+    private presence: PresenceService,
   ) {}
 
   /**
@@ -289,6 +291,7 @@ export class ProfilesService implements OnModuleInit {
       }),
     ]);
 
+    const status = (await this.presence.statusFor([targetUserId])).get(targetUserId);
     const mine = new Set(me?.interests.map((i) => i.interestId) ?? []);
     const shared = profile.interests.filter((i) => mine.has(i.interestId));
 
@@ -325,6 +328,8 @@ export class ProfilesService implements OnModuleInit {
       liked: mySwipe?.type === 'LIKE' || mySwipe?.type === 'SUPERLIKE',
       saved: mySwipe?.type === 'FAVORITE',
       likesYou: theirSwipe?.type === 'LIKE' || theirSwipe?.type === 'SUPERLIKE',
+      online: status?.online ?? false,
+      lastSeenAt: status?.lastSeenAt ?? null,
       matched: Boolean(match),
       conversationId: match?.conversation?.id ?? null,
       self: false,
