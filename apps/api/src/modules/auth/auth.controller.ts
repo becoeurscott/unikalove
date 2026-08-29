@@ -61,9 +61,10 @@ export class AuthController {
   @Throttle({ auth: { limit: 8, ttl: 60_000 } })
   @Post('register')
   async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
-    const { accessToken, refreshToken } = await this.auth.register(dto.email, dto.password);
+    const { accessToken, refreshToken, user } = await this.auth.register(dto.email, dto.password);
     this.setRefreshCookie(res, refreshToken);
-    return { accessToken };
+    // The user rides along so the client does not need a second /auth/me hop.
+    return { accessToken, user };
   }
 
   @Public()
@@ -71,9 +72,9 @@ export class AuthController {
   @Throttle({ auth: { limit: 8, ttl: 60_000 } })
   @Post('login')
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    const { accessToken, refreshToken } = await this.auth.login(dto.email, dto.password);
+    const { accessToken, refreshToken, user } = await this.auth.login(dto.email, dto.password);
     this.setRefreshCookie(res, refreshToken);
-    return { accessToken };
+    return { accessToken, user };
   }
 
   @Public()

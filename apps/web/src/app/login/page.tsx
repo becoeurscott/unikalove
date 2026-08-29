@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { LogoMark } from '@/components/Logo';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
+import { warmUpApi } from '@/lib/api';
+import { LoadingOverlay } from '@/components/LoadingOverlay';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -14,6 +16,9 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
+  // Wake the API while the form is being filled in — see warmUpApi.
+  useEffect(() => warmUpApi(), []);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -21,15 +26,16 @@ export default function LoginPage() {
     try {
       await login(email, password);
       router.push('/');
+      // The overlay stays up through the redirect; the dashboard replaces it.
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Connexion impossible');
-    } finally {
       setBusy(false);
     }
   }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-brand-cream p-4">
+      <LoadingOverlay show={busy} title="Connexion en cours…" />
       <div className="w-full max-w-md rounded-card bg-white p-8 shadow-xl">
         <div className="mb-8 text-center">
           <div className="mb-2 flex justify-center">

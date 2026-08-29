@@ -4,8 +4,10 @@ import { Mail } from 'lucide-react';
 import Link from 'next/link';
 import { LogoMark } from '@/components/Logo';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
+import { warmUpApi } from '@/lib/api';
+import { LoadingOverlay } from '@/components/LoadingOverlay';
 
 const OAUTH = [
   { label: 'Continuer avec Google', classes: 'border border-gray-200 bg-white text-gray-700' },
@@ -20,6 +22,10 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  // Start waking the API while the form is being filled in, so submitting does
+  // not pay for the cold start.
+  useEffect(() => warmUpApi(), []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,15 +44,17 @@ export default function RegisterPage() {
         /* storage unavailable — just skip the upsell redirect */
       }
       router.push('/onboarding');
+      // Deliberately leave the overlay up: the push is async and the wizard
+      // does its own fetch, so clearing here would flash the form back.
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Inscription impossible');
-    } finally {
       setBusy(false);
     }
   }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-brand-cream p-4">
+      <LoadingOverlay show={busy} title="Création de votre compte…" />
       <div className="w-full max-w-md rounded-card bg-white p-8 shadow-xl">
         <div className="mb-6 text-center">
           <div className="mb-2 flex justify-center">

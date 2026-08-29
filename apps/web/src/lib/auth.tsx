@@ -43,23 +43,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  async function login(email: string, password: string) {
-    const { accessToken } = await api<{ accessToken: string }>('/auth/login', {
+  /**
+   * Both endpoints return the user alongside the token, so signing in is a
+   * single round trip. The /auth/me fallback covers an API that predates that.
+   */
+  async function authenticate(path: '/auth/login' | '/auth/register', body: unknown) {
+    const res = await api<{ accessToken: string; user?: WebUser }>(path, {
       method: 'POST',
-      body: { email, password },
+      body,
     });
-    setToken(accessToken);
-    setUser(await api<WebUser>('/auth/me', { token: accessToken }));
+    setToken(res.accessToken);
+    setUser(res.user ?? (await api<WebUser>('/auth/me', { token: res.accessToken })));
   }
 
-  async function register(email: string, password: string) {
-    const { accessToken } = await api<{ accessToken: string }>('/auth/register', {
-      method: 'POST',
-      body: { email, password },
-    });
-    setToken(accessToken);
-    setUser(await api<WebUser>('/auth/me', { token: accessToken }));
-  }
+  const login = (email: string, password: string) =>
+    authenticate('/auth/login', { email, password });
+
+  const register = (email: string, password: string) =>
+    authenticate('/auth/register', { email, password });
 
   function logout() {
     api('/auth/logout', { method: 'POST' }).catch(() => {});

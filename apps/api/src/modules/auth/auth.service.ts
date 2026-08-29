@@ -11,6 +11,14 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 const sha256 = (v: string) => createHash('sha256').update(v).digest('hex');
 
+/** The shape /auth/me returns, so sign-in needs only one round trip. */
+const publicUser = (u: { id: string; email: string; role: string; plan: string }) => ({
+  id: u.id,
+  email: u.email,
+  role: u.role,
+  plan: u.plan,
+});
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -29,7 +37,7 @@ export class AuthService {
     const user = await this.prisma.user.create({
       data: { email, passwordHash: await bcrypt.hash(password, 10) },
     });
-    return this.issueTokens(user.id, user.email);
+    return { ...(await this.issueTokens(user.id, user.email)), user: publicUser(user) };
   }
 
   async login(email: string, password: string) {
@@ -38,7 +46,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
     if (user.status !== 'ACTIVE') throw new UnauthorizedException('Account not active');
-    return this.issueTokens(user.id, user.email);
+    return { ...(await this.issueTokens(user.id, user.email)), user: publicUser(user) };
   }
 
   /** Rotates the refresh token: old one is revoked, a new one is issued. */

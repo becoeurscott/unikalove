@@ -21,6 +21,24 @@ export function setToken(token: string | null) {
   }
 }
 
+let warmed = false;
+
+/**
+ * Nudges the API awake without blocking anything.
+ *
+ * The instance sleeps after ~15 minutes idle, and waking it costs the best part
+ * of a minute. Calling this when an auth screen mounts means the container is
+ * already starting while the user types, so submitting usually lands on a warm
+ * server instead of paying the wake-up itself. Failures are ignored — this is
+ * a hint, never a dependency.
+ */
+export function warmUpApi(): void {
+  if (warmed || typeof window === 'undefined') return;
+  warmed = true;
+  const url = API_URL.replace(/\/api\/v1\/?$/, '') + '/api/v1/health';
+  void fetch(url, { method: 'GET', cache: 'no-store' }).catch(() => undefined);
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
