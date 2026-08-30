@@ -61,6 +61,16 @@ services:
         sync: false
       - key: STRIPE_PRICE_PREMIUM_PLUS
         sync: false
+      # Chariow — mobile money + cards. See docs/CHARIOW.md for the product map.
+      - key: CHARIOW_API_KEY
+        sync: false
+      - key: CHARIOW_WEBHOOK_SECRET
+        sync: false
+      - key: CHARIOW_PRODUCTS
+        sync: false
+      - key: CHARIOW_API_URL
+        value: https://api.chariow.com/v1
+
       - key: MONEROO_SECRET_KEY
         sync: false
       - key: MONEROO_WEBHOOK_SECRET

@@ -123,7 +123,10 @@ export class PaymentsController {
   async webhook(@Param('provider') name: string, @Req() req: Request) {
     const raw = (req as Request & { rawBody?: Buffer }).rawBody;
     const provider = this.registry.get(name);
-    const signature = req.headers[provider.signatureHeader] as string | undefined;
+    // Chariow does not sign its callbacks; its shared secret rides in the URL.
+    const signature = provider.webhookSecretInQuery
+      ? (req.query?.secret as string | undefined)
+      : (req.headers[provider.signatureHeader] as string | undefined);
     if (!raw || !signature) throw new BadRequestException('Signature ou corps manquant');
     const result = await this.payments.ingestWebhook(name, raw, signature);
     this.logger.log(
@@ -162,5 +165,20 @@ export class PaymentsController {
     const expected = this.config.get<string>('INTERNAL_CRON_TOKEN');
     if (!expected || token !== expected) throw new ForbiddenException();
     return this.subscriptions.sweepExpiries();
+  }
+
+  /**
+   * Pull-based reconciliation for hosted checkouts. Same external scheduler as
+   * the sweep; run it more often (every few minutes) because it is what
+   * catches a sale whose webhook never arrived.
+   */
+  @Public()
+  @HttpCode(200)
+  @Post('internal/reconcile')
+  @ApiExcludeEndpoint()
+  async reconcile(@Headers('x-internal-token') token: string) {
+    const expected = this.config.get<string>('INTERNAL_CRON_TOKEN');
+    if (!expected || token !== expected) throw new ForbiddenException();
+    return this.payments.reconcilePending();
   }
 }

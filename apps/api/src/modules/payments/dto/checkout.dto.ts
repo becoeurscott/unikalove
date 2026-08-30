@@ -34,4 +34,19 @@ export class CheckoutDto {
   @IsOptional()
   @Matches(/^\+[1-9]\d{7,14}$/, { message: 'Numéro invalide (format attendu : +221771234567)' })
   phone?: string;
+
+  /**
+   * Chariow wants the national number plus an ISO2 country and rejects a raw
+   * E.164. African numbers can be split from the dialling code alone, but a
+   * diaspora number (+33, +1) cannot — send these whenever the picker knows.
+   */
+  @ApiPropertyOptional({ description: 'ISO2 country of the phone, e.g. SN, CI, FR' })
+  @IsOptional()
+  @Matches(/^[A-Za-z]{2}$/, { message: 'Pays du numéro invalide (ISO2 attendu, ex. SN)' })
+  phoneCountry?: string;
+
+  @ApiPropertyOptional({ description: 'National number without dialling code, e.g. 771234567' })
+  @IsOptional()
+  @Matches(/^[0-9\s.-]{6,15}$/, { message: 'Numéro local invalide' })
+  phoneLocal?: string;
 }

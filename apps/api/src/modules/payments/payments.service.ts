@@ -69,6 +69,8 @@ export class PaymentsService {
       plan: dto.plan,
       periodDays,
       phone: dto.phone,
+      phoneCountry: dto.phoneCountry,
+      phoneLocal: dto.phoneLocal,
       description: `UnikaLove ${dto.plan}${periodDays ? ` — ${periodDays} jours` : ''}`,
     });
   }
@@ -88,6 +90,8 @@ export class PaymentsService {
       currency,
       sku: dto.sku,
       phone: dto.phone,
+      phoneCountry: dto.phoneCountry,
+      phoneLocal: dto.phoneLocal,
       description: `UnikaLove — ${pack.label}`,
     });
   }
@@ -107,6 +111,8 @@ export class PaymentsService {
       sku?: string;
       periodDays?: number;
       phone?: string;
+      phoneCountry?: string;
+      phoneLocal?: string;
       description: string;
     },
   ) {
@@ -142,13 +148,24 @@ export class PaymentsService {
         amount: input.amount,
         currency: input.currency,
         description: input.description,
-        customer: { firstName: profile?.displayName, phone: input.phone },
+        customer: {
+          firstName: profile?.displayName,
+          phone: input.phone,
+          phoneCountry: input.phoneCountry,
+          phoneLocal: input.phoneLocal,
+        },
       });
 
-      if (result.providerRef) {
+      // Providers that price the sale themselves report what they will really
+      // debit; record that rather than our expectation.
+      if (result.providerRef || result.amount != null || result.currency) {
         await this.prisma.payment.update({
           where: { id: payment.id },
-          data: { providerRef: result.providerRef },
+          data: {
+            ...(result.providerRef ? { providerRef: result.providerRef } : {}),
+            ...(result.amount != null ? { amount: result.amount } : {}),
+            ...(result.currency ? { currency: result.currency } : {}),
+          },
         });
       }
       return { url: result.url, paymentId: payment.id };
@@ -202,6 +219,7 @@ export class PaymentsService {
       // Defence in depth: never grant on the webhook's word alone.
       if (event.type === 'completed' && provider.verifyPayment) {
         const live = await provider.verifyPayment(event.providerRef);
+        if (live?.completedAt) event.completedAt = live.completedAt;
         if (live && live.status !== 'completed') {
           this.logger.warn(
             `Re-query mismatch for ${event.providerRef}: webhook=completed live=${live.status}`,
@@ -216,6 +234,123 @@ export class PaymentsService {
     }
 
     return { received: true, applied, deduped };
+  }
+
+  /**
+   * Pull-based safety net for providers that cannot be trusted to push.
+   *
+   * Chariow's webhook is optional and unsigned, and a hosted checkout can
+   * settle after the buyer has closed the tab, so the push path alone loses
+   * sales. This re-reads every payment that could still change:
+   *
+   * - PENDING, which may have settled since;
+   * - FAILED within RECONCILE_FAILED_DAYS, because a sale settled late (or
+   *   expired by our own sweep) still has to be honoured;
+   *
+   * and expires PENDING rows older than the window so they stop being retried
+   * forever. Fulfilment goes through the same dedup barrier as a webhook, so
+   * running this alongside a live webhook cannot double-grant.
+   */
+  async reconcilePending(): Promise<{
+    checked: number;
+    completed: number;
+    expired: number;
+    failed: number;
+  }> {
+    const failedDays = Number(process.env.RECONCILE_FAILED_DAYS ?? 14);
+    const expireHours = Number(process.env.PENDING_EXPIRE_HOURS ?? 2);
+    const now = Date.now();
+    const failedSince = new Date(now - failedDays * 86_400_000);
+
+    const candidates = await this.prisma.payment.findMany({
+      where: {
+        providerRef: { not: null },
+        OR: [
+          { status: 'PENDING' },
+          { status: 'FAILED', createdAt: { gte: failedSince } },
+        ],
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 200,
+    });
+
+    let checked = 0;
+    let completed = 0;
+    let expired = 0;
+    let failed = 0;
+
+    for (const payment of candidates) {
+      let provider;
+      try {
+        provider = this.registry.get(payment.provider);
+      } catch {
+        continue; // provider since disabled — nothing we can ask
+      }
+      if (!provider.verifyPayment || !payment.providerRef) continue;
+
+      checked++;
+      const live = await provider.verifyPayment(payment.providerRef);
+      if (!live) continue;
+
+      if (live.status === 'completed') {
+        const event: PaymentEvent = {
+          // Deterministic per sale, so repeated sweeps dedup against each
+          // other and against a webhook for the same sale.
+          eventId: `reconcile-${payment.provider}-${payment.providerRef}`,
+          type: 'completed',
+          providerRef: payment.providerRef,
+          paymentId: payment.id,
+          userId: payment.userId,
+          kind: payment.kind,
+          plan: payment.plan ?? undefined,
+          sku: payment.sku ?? undefined,
+          periodDays: payment.periodDays ?? undefined,
+          amount: live.amount,
+          currency: live.currency,
+          completedAt: live.completedAt ?? payment.createdAt,
+        };
+        try {
+          await this.prisma.processedWebhookEvent.create({
+            data: { provider: payment.provider, eventId: event.eventId },
+          });
+        } catch (err) {
+          if (
+            err instanceof Prisma.PrismaClientKnownRequestError &&
+            err.code === 'P2002'
+          ) {
+            continue; // already fulfilled by an earlier sweep or the webhook
+          }
+          throw err;
+        }
+        await this.fulfil(payment.provider, event);
+        completed++;
+        this.logger.log(`Reconciled ${payment.provider} sale ${payment.providerRef}`);
+        continue;
+      }
+
+      if (payment.status !== 'PENDING') continue;
+
+      if (live.status === 'failed' || live.status === 'canceled') {
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: { status: 'FAILED', failureReason: `Reconcile: ${live.status}` },
+        });
+        failed++;
+        continue;
+      }
+
+      // Still pending upstream: give up only once the window has passed. The
+      // FAILED re-check above means this is not final.
+      if (now - payment.createdAt.getTime() > expireHours * 3_600_000) {
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: { status: 'FAILED', failureReason: 'expired_pending' },
+        });
+        expired++;
+      }
+    }
+
+    return { checked, completed, expired, failed };
   }
 
   private async resolvePayment(event: PaymentEvent): Promise<Payment | null> {
@@ -258,6 +393,18 @@ export class PaymentsService {
       return;
     }
 
+    // Metadata is attacker-influenced on providers without a signed body, so
+    // confirm the account exists before granting anything against it. Without
+    // this a bogus userId reaches the database as a foreign-key crash.
+    const exists = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!exists) {
+      this.logger.warn(`Webhook ${event.eventId} names unknown user ${userId}`);
+      return;
+    }
+
     const kind = event.kind ?? payment?.kind ?? 'SUBSCRIPTION';
 
     if (kind === 'CREDIT_PACK') {
@@ -273,7 +420,7 @@ export class PaymentsService {
         if (payment) {
           await tx.payment.update({
             where: { id: payment.id },
-            data: { status: 'COMPLETED', completedAt: new Date() },
+            data: { status: 'COMPLETED', completedAt: event.completedAt ?? new Date() },
           });
         }
         await tx.creditLedger.create({
@@ -301,7 +448,10 @@ export class PaymentsService {
         where: { id: payment.id },
         data: {
           status: event.type === 'canceled' ? payment.status : 'COMPLETED',
-          completedAt: event.type === 'canceled' ? payment.completedAt : new Date(),
+          completedAt:
+            event.type === 'canceled'
+              ? payment.completedAt
+              : (event.completedAt ?? new Date()),
           providerRef: payment.providerRef ?? event.providerRef,
         },
       });

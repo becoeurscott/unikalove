@@ -26,6 +26,14 @@ const schema = z
     STRIPE_PRICE_PREMIUM: z.string().optional(),
     STRIPE_PRICE_PREMIUM_PLUS: z.string().optional(),
 
+    // Chariow: hosted checkout for African mobile money + cards. All three are
+    // needed before it will offer itself as a payment method.
+    CHARIOW_API_KEY: z.string().optional(),
+    CHARIOW_WEBHOOK_SECRET: z.string().optional(),
+    /// JSON map of SKU -> Chariow product id, e.g. {"PREMIUM_30":"prod_…"}.
+    CHARIOW_PRODUCTS: z.string().optional(),
+    CHARIOW_API_URL: z.string().url().default('https://api.chariow.com/v1'),
+
     MONEROO_SECRET_KEY: z.string().optional(),
     MONEROO_WEBHOOK_SECRET: z.string().optional(),
     MONEROO_BASE_URL: z.string().url().default('https://api.moneroo.io'),

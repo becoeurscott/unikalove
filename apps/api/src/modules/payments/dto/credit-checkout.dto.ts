@@ -21,4 +21,15 @@ export class CreditCheckoutDto {
   @IsOptional()
   @Matches(/^\+[1-9]\d{7,14}$/, { message: 'Numéro invalide' })
   phone?: string;
+
+  /** See CheckoutDto — Chariow needs a national number plus an ISO2 country. */
+  @ApiPropertyOptional({ description: 'ISO2 country of the phone, e.g. SN' })
+  @IsOptional()
+  @Matches(/^[A-Za-z]{2}$/, { message: 'Pays du numéro invalide (ISO2 attendu)' })
+  phoneCountry?: string;
+
+  @ApiPropertyOptional({ description: 'National number without dialling code' })
+  @IsOptional()
+  @Matches(/^[0-9\s.-]{6,15}$/, { message: 'Numéro local invalide' })
+  phoneLocal?: string;
 }
