@@ -58,7 +58,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ auth: { limit: 8, ttl: 60_000 } })
+  @Throttle({ default: { limit: 8, ttl: 60_000 } })
   @Post('register')
   async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
     const { accessToken, refreshToken, user } = await this.auth.register(dto.email, dto.password);
@@ -69,7 +69,7 @@ export class AuthController {
 
   @Public()
   @HttpCode(200)
-  @Throttle({ auth: { limit: 8, ttl: 60_000 } })
+  @Throttle({ default: { limit: 8, ttl: 60_000 } })
   @Post('login')
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const { accessToken, refreshToken, user } = await this.auth.login(dto.email, dto.password);
@@ -104,7 +104,7 @@ export class AuthController {
 
   @Public()
   @HttpCode(202)
-  @Throttle({ auth: { limit: 8, ttl: 60_000 } })
+  @Throttle({ default: { limit: 8, ttl: 60_000 } })
   @Post('forgot-password')
   async forgot(@Body() dto: ForgotPasswordDto) {
     await this.auth.forgotPassword(dto.email);
@@ -113,7 +113,7 @@ export class AuthController {
 
   @Public()
   @HttpCode(204)
-  @Throttle({ auth: { limit: 8, ttl: 60_000 } })
+  @Throttle({ default: { limit: 8, ttl: 60_000 } })
   @Post('reset-password')
   async reset(@Body() dto: ResetPasswordDto) {
     await this.auth.resetPassword(dto.token, dto.newPassword);

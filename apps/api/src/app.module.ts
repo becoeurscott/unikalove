@@ -28,11 +28,11 @@ import { MediaModule } from './modules/media/media.module';
   controllers: [AppController],
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
-    ThrottlerModule.forRoot([
-      { name: 'default', ttl: 60_000, limit: 100 },
-      // Credential endpoints: 8 attempts per minute per IP.
-      { name: 'auth', ttl: 60_000, limit: 8 },
-    ]),
+    // One named throttler only. A second entry here would ALSO apply to every
+    // route — a named limit is not scoped to the routes that mention it — so
+    // the old 'auth' entry silently capped the whole API at 8 requests/minute.
+    // Credential endpoints tighten this per-route with @Throttle({ default: … }).
+    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 100 }]),
     PrismaModule,
     RedisModule,
     AuthModule,
