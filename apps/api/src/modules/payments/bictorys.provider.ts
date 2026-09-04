@@ -90,8 +90,10 @@ export class BictorysProvider implements PaymentProvider {
   private readonly appUrl: string;
 
   constructor(private readonly config: ConfigService) {
-    this.secretKey = config.get<string>('BICTORYS_SECRET_KEY') || undefined;
-    this.webhookSecret = config.get<string>('BICTORYS_WEBHOOK_SECRET') || undefined;
+    // Trimmed: a key pasted into a dashboard field very often arrives with a
+    // trailing newline or space, which the provider rejects as a wrong key.
+    this.secretKey = config.get<string>('BICTORYS_SECRET_KEY')?.trim() || undefined;
+    this.webhookSecret = config.get<string>('BICTORYS_WEBHOOK_SECRET')?.trim() || undefined;
     this.baseUrl = (
       config.get<string>('BICTORYS_API_URL') ?? 'https://api.bictorys.com'
     ).replace(/\/$/, '');
