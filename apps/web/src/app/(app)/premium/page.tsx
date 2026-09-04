@@ -1,9 +1,11 @@
 'use client';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Check, Crown } from 'lucide-react';
+import { Check, CalendarClock, Crown } from 'lucide-react';
 import { useState } from 'react';
 import { api, ApiError } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { formatDaysLeft, formatExpiry, planStatus } from '@/lib/subscription';
 
 type PaidPlan = 'PREMIUM' | 'PREMIUM_PLUS';
 
@@ -55,7 +57,13 @@ function periodLabel(days: number) {
 }
 
 export default function PremiumPage() {
-  const [plan, setPlan] = useState<PaidPlan>('PREMIUM');
+  const { user } = useAuth();
+  const status = planStatus(user?.plan, user?.planExpiresAt);
+  // A Premium member has nothing to gain from buying Premium again, so the
+  // default selection is the only thing left to sell them.
+  const [plan, setPlan] = useState<PaidPlan>(
+    user?.plan === 'PREMIUM' ? 'PREMIUM_PLUS' : 'PREMIUM',
+  );
   const [periodDays, setPeriodDays] = useState(30);
   const [error, setError] = useState('');
 
@@ -114,11 +122,56 @@ export default function PremiumPage() {
     <div className="mx-auto max-w-3xl space-y-8">
       <div className="text-center">
         <Crown className="mx-auto mb-2 text-brand-gold" size={32} />
-        <h1 className="text-2xl font-bold">Passez Premium</h1>
+        <h1 className="text-2xl font-bold">
+          {status.isPaid ? 'Votre abonnement' : 'Passez Premium'}
+        </h1>
         <p className="text-sm text-gray-500">
-          Payez par Mobile Money ou carte bancaire. Sans engagement.
+          {status.isPaid
+            ? 'Prolongez quand vous voulez — le temps restant est conservé.'
+            : 'Payez par Mobile Money ou carte bancaire. Sans engagement.'}
         </p>
       </div>
+
+      {/* What they already own, and how long is left of it. */}
+      {status.isPaid && (
+        <div
+          className={`rounded-card border p-5 ${
+            status.expiringSoon
+              ? 'border-amber-200 bg-amber-50'
+              : 'border-brand/20 bg-brand-soft/40'
+          }`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 font-bold text-brand">
+                <Crown size={17} className="text-brand-gold" />
+                {status.label} actif
+              </div>
+              {status.expiresAt && (
+                <p className="mt-1 flex items-center gap-1.5 text-sm text-gray-600">
+                  <CalendarClock size={14} />
+                  Jusqu&apos;au {formatExpiry(status.expiresAt)}
+                </p>
+              )}
+            </div>
+            {status.daysLeft !== null && (
+              <div
+                className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
+                  status.expiringSoon ? 'bg-amber-100 text-amber-800' : 'bg-white text-brand'
+                }`}
+              >
+                {formatDaysLeft(status.daysLeft)}
+              </div>
+            )}
+          </div>
+          {status.expiringSoon && (
+            <p className="mt-3 text-xs text-amber-800">
+              Le Mobile Money ne se renouvelle pas tout seul : prolongez avant la fin
+              pour ne pas perdre vos avantages.
+            </p>
+          )}
+        </div>
+      )}
 
       {noProviders && (
         <div className="rounded-card border border-gray-100 bg-white p-6 text-center text-sm text-gray-500">
@@ -229,7 +282,7 @@ export default function PremiumPage() {
             {checkout.isPending
               ? 'Redirection…'
               : price !== undefined && !selectedProvider?.recurring
-                ? `Payer ${formatXof(price)}`
+                ? `${status.isPaid ? 'Prolonger' : 'Payer'} ${formatXof(price)}`
                 : 'Continuer'}
           </button>
         </>

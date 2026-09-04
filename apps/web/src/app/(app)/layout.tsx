@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { PageTransition } from '@/components/Motion';
 import { Sidebar } from '@/components/Sidebar';
 import { PresenceProvider } from '@/lib/presence';
+import { RenewalBanner } from '@/components/RenewalBanner';
 import { LoadingScreen } from '@/components/Spinner';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -46,6 +47,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         owns its own scroll.
       */}
       <main className="min-w-0 flex-1 px-4 pb-10 pt-[72px] md:h-screen md:overflow-y-auto md:p-8 md:pt-8">
+        <RenewalBanner />
         <PageTransition>{children}</PageTransition>
       </main>
     </div>

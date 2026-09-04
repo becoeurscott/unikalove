@@ -1,10 +1,12 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ShieldOff, Trash2 } from 'lucide-react';
+import { CalendarClock, Crown, ShieldOff, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { formatDaysLeft, formatExpiry, planStatus } from '@/lib/subscription';
 
 interface Preference {
   minAge: number;
@@ -20,7 +22,7 @@ interface BlockRow {
 }
 
 export default function SettingsPage() {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const qc = useQueryClient();
   const [prefs, setPrefs] = useState<Preference>({
     minAge: 18,
@@ -68,6 +70,66 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold">Réglages</h1>
         <p className="text-sm text-gray-500">Préférences de recherche et compte</p>
       </div>
+
+      {/* What the member is on, and — for a paid plan — when it runs out.
+          Mobile money does not renew itself, so this date is the only warning
+          they get. */}
+      <section className="rounded-card border border-gray-100 bg-white p-6">
+        <h2 className="mb-3 flex items-center gap-2 font-semibold">
+          <Crown size={17} className="text-brand-gold" />
+          Abonnement
+        </h2>
+        {(() => {
+          const status = planStatus(user?.plan, user?.planExpiresAt);
+          if (!status.isPaid) {
+            return (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-gray-600">
+                  Vous êtes sur le forfait <strong>Gratuit</strong>.
+                </p>
+                <Link
+                  href="/premium"
+                  className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Passer Premium
+                </Link>
+              </div>
+            );
+          }
+          return (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-brand">{status.label}</p>
+                  {status.expiresAt && (
+                    <p className="mt-0.5 flex items-center gap-1.5 text-sm text-gray-600">
+                      <CalendarClock size={14} />
+                      Actif jusqu&apos;au {formatExpiry(status.expiresAt)}
+                    </p>
+                  )}
+                </div>
+                {status.daysLeft !== null && (
+                  <span
+                    className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
+                      status.expiringSoon
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-brand-soft text-brand'
+                    }`}
+                  >
+                    {formatDaysLeft(status.daysLeft)}
+                  </span>
+                )}
+              </div>
+              <Link
+                href="/premium"
+                className="inline-block rounded-lg border border-brand px-4 py-2 text-sm font-semibold text-brand hover:bg-brand-soft"
+              >
+                Prolonger
+              </Link>
+            </div>
+          );
+        })()}
+      </section>
 
       <section className="space-y-4 rounded-card border border-gray-100 bg-white p-6">
         <h2 className="font-semibold">Préférences de découverte</h2>

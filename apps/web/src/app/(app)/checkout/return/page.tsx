@@ -4,8 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, Clock, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 
 interface PaymentRow {
   id: string;
@@ -25,6 +26,7 @@ const MAX_POLLS = 30;
 function CheckoutReturn() {
   const params = useSearchParams();
   const paymentId = params.get('paymentId');
+  const { refreshUser } = useAuth();
 
   const { data, isLoading, failureCount } = useQuery({
     queryKey: ['payment', paymentId],
@@ -40,6 +42,14 @@ function CheckoutReturn() {
     },
     retry: 3,
   });
+
+  // The plan was fetched before this payment existed, so the rest of the app
+  // still believes the member is on FREE. Re-read the account the moment the
+  // payment confirms, rather than making them reload to see what they bought.
+  const confirmed = data?.status === 'COMPLETED';
+  useEffect(() => {
+    if (confirmed) void refreshUser();
+  }, [confirmed, refreshUser]);
 
   if (!paymentId) {
     return (

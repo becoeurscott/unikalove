@@ -42,6 +42,12 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       plan = 'FREE';
     }
 
-    return { id: user.id, email: user.email, role: user.role, plan };
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      plan,
+      planExpiresAt: plan === 'FREE' ? null : user.planExpiresAt,
+    };
   }
 }

@@ -12,11 +12,18 @@ import { PrismaService } from '../../prisma/prisma.service';
 const sha256 = (v: string) => createHash('sha256').update(v).digest('hex');
 
 /** The shape /auth/me returns, so sign-in needs only one round trip. */
-const publicUser = (u: { id: string; email: string; role: string; plan: string }) => ({
+const publicUser = (u: {
+  id: string;
+  email: string;
+  role: string;
+  plan: string;
+  planExpiresAt?: Date | null;
+}) => ({
   id: u.id,
   email: u.email,
   role: u.role,
   plan: u.plan,
+  planExpiresAt: u.planExpiresAt ?? null,
 });
 
 @Injectable()
