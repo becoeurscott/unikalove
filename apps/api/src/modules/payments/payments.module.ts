@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { CreditsModule } from '../credits/credits.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
+import { BictorysProvider } from './bictorys.provider';
 import { ChariowProvider } from './chariow.provider';
 import { MonerooProvider } from './moneroo.provider';
 import { PAYMENT_PROVIDERS } from './payment-provider.interface';
@@ -16,6 +17,7 @@ import { StripeProvider } from './stripe.provider';
     StripeProvider,
     MonerooProvider,
     ChariowProvider,
+    BictorysProvider,
     {
       // Register every adapter here; the registry picks one per request.
       provide: PAYMENT_PROVIDERS,
@@ -23,8 +25,9 @@ import { StripeProvider } from './stripe.provider';
         stripe: StripeProvider,
         moneroo: MonerooProvider,
         chariow: ChariowProvider,
-      ) => [stripe, moneroo, chariow],
-      inject: [StripeProvider, MonerooProvider, ChariowProvider],
+        bictorys: BictorysProvider,
+      ) => [stripe, moneroo, chariow, bictorys],
+      inject: [StripeProvider, MonerooProvider, ChariowProvider, BictorysProvider],
     },
     PaymentProviderRegistry,
     PaymentsService,

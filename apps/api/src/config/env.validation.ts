@@ -34,6 +34,12 @@ const schema = z
     CHARIOW_PRODUCTS: z.string().optional(),
     CHARIOW_API_URL: z.string().url().default('https://api.chariow.com/v1'),
 
+    // Bictorys: West African mobile money + cards. Both keys are needed
+    // before it offers itself as a payment method.
+    BICTORYS_SECRET_KEY: z.string().optional(),
+    BICTORYS_WEBHOOK_SECRET: z.string().optional(),
+    BICTORYS_API_URL: z.string().url().default('https://api.bictorys.com'),
+
     MONEROO_SECRET_KEY: z.string().optional(),
     MONEROO_WEBHOOK_SECRET: z.string().optional(),
     MONEROO_BASE_URL: z.string().url().default('https://api.moneroo.io'),

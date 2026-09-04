@@ -61,6 +61,14 @@ services:
         sync: false
       - key: STRIPE_PRICE_PREMIUM_PLUS
         sync: false
+      # Bictorys — mobile money + cards, the active provider. See docs/BICTORYS.md.
+      - key: BICTORYS_SECRET_KEY
+        sync: false
+      - key: BICTORYS_WEBHOOK_SECRET
+        sync: false
+      - key: BICTORYS_API_URL
+        value: https://api.bictorys.com
+
       # Chariow — mobile money + cards. See docs/CHARIOW.md for the product map.
       - key: CHARIOW_API_KEY
         sync: false
