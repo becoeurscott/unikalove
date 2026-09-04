@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Check, Crown, CreditCard, Smartphone } from 'lucide-react';
+import { Check, Crown } from 'lucide-react';
 import { useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 
@@ -57,8 +57,6 @@ function periodLabel(days: number) {
 export default function PremiumPage() {
   const [plan, setPlan] = useState<PaidPlan>('PREMIUM');
   const [periodDays, setPeriodDays] = useState(30);
-  const [provider, setProvider] = useState<string | null>(null);
-  const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
 
   const { data: plans } = useQuery({
@@ -73,10 +71,13 @@ export default function PremiumPage() {
     retry: false,
   });
 
+  // One provider is configured, and its hosted page collects the payment
+  // method and the mobile-money number itself — so there is nothing here for
+  // the member to choose. Should a second provider ever be enabled, a picker
+  // comes back; until then choosing for them is one less step before paying.
   const providers = providersData?.providers ?? [];
-  const selected = provider ?? providers[0]?.name ?? null;
-  const selectedProvider = providers.find((p) => p.name === selected);
-  const needsPhone = selectedProvider ? !selectedProvider.recurring : false;
+  const selectedProvider = providers[0];
+  const selected = selectedProvider?.name ?? null;
 
   const checkout = useMutation({
     mutationFn: () =>
@@ -87,7 +88,6 @@ export default function PremiumPage() {
           ...(selected ? { provider: selected } : {}),
           // Recurring providers bill their own cycle and ignore this.
           ...(selectedProvider?.recurring ? {} : { periodDays }),
-          ...(needsPhone && phone ? { phone } : {}),
         },
       }),
     onSuccess: ({ url }) => {
@@ -203,59 +203,16 @@ export default function PremiumPage() {
             </div>
           )}
 
-          {/* Payment method */}
-          <div>
-            <h2 className="mb-2 text-sm font-semibold">Moyen de paiement</h2>
-            <div className="flex flex-wrap gap-2">
-              {providers.map((p) => {
-                const active = selected === p.name;
-                const Icon = p.recurring ? CreditCard : Smartphone;
-                return (
-                  <button
-                    key={p.name}
-                    type="button"
-                    onClick={() => setProvider(p.name)}
-                    aria-pressed={active}
-                    className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition ${
-                      active
-                        ? 'border-brand bg-brand-soft/40 ring-1 ring-brand'
-                        : 'border-gray-200 bg-white hover:border-gray-300'
-                    }`}
-                  >
-                    <Icon size={16} />
-                    {p.label}
-                  </button>
-                );
-              })}
-            </div>
-            {needsPhone && (
-              <div className="mt-3">
-                <label htmlFor="momo-phone" className="text-sm text-gray-600">
-                  Numéro Mobile Money
-                </label>
-                <input
-                  id="momo-phone"
-                  type="tel"
-                  inputMode="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+221771234567"
-                  className="mt-1 w-full max-w-xs rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                />
-                <p className="mt-1 text-xs text-gray-400">
-                  Format international, ex. +221771234567. Optionnel — vous pourrez
-                  aussi le saisir sur la page de paiement.
-                </p>
-              </div>
-            )}
-            {needsPhone && (
-              <p className="mt-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-500">
-                Le Mobile Money ne se renouvelle pas automatiquement : vous achetez{' '}
-                {periodLabel(periodDays)} d&apos;accès. Nous vous préviendrons avant
-                l&apos;expiration.
-              </p>
-            )}
-          </div>
+          {/* One-shot providers sell a window rather than a subscription, which
+              the member should know before paying. */}
+          {!selectedProvider?.recurring && (
+            <p className="rounded-lg bg-gray-50 p-3 text-xs text-gray-500">
+              Le Mobile Money ne se renouvelle pas automatiquement : vous achetez{' '}
+              {periodLabel(periodDays)} d&apos;accès. Nous vous préviendrons avant
+              l&apos;expiration. Vous choisirez votre opérateur et saisirez votre
+              numéro sur la page de paiement sécurisée.
+            </p>
+          )}
 
           {error && (
             <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600" role="alert">
