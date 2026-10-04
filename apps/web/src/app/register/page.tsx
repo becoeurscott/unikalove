@@ -11,8 +11,6 @@ import { LoadingOverlay } from '@/components/LoadingOverlay';
 
 const OAUTH = [
   { label: 'Continuer avec Google', classes: 'border border-gray-200 bg-white text-gray-700' },
-  { label: 'Continuer avec Facebook', classes: 'bg-[#1877F2] text-white' },
-  { label: 'Continuer avec Apple', classes: 'bg-black text-white' },
 ];
 
 export default function RegisterPage() {
