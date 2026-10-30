@@ -1,5 +1,5 @@
 import { Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import {
   ConnectedSocket,
   MessageBody,
@@ -13,6 +13,7 @@ import { MessageType } from '@prisma/client';
 import { Server, Socket } from 'socket.io';
 import { MessagingService } from './messaging.service';
 import { PresenceService } from './presence.service';
+import { accessTokenSecrets, verifyAccessToken } from '../auth/access-token';
 
 interface AuthedSocket extends Socket {
   data: { userId: string };
@@ -27,7 +28,7 @@ export class MessagingGateway
   private heartbeat?: NodeJS.Timeout;
 
   constructor(
-    private jwt: JwtService,
+    private config: ConfigService,
     private messaging: MessagingService,
     private presence: PresenceService,
   ) {}
@@ -58,7 +59,8 @@ export class MessagingGateway
       const token =
         client.handshake.auth?.token ??
         (client.handshake.headers.authorization ?? '').replace('Bearer ', '');
-      const payload = await this.jwt.verifyAsync(token);
+      const payload = verifyAccessToken(token, accessTokenSecrets(this.config));
+      if (!payload) throw new Error('invalid token');
       client.data.userId = payload.sub;
       client.join(`user:${payload.sub}`);
 

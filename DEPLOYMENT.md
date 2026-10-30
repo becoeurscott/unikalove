@@ -65,6 +65,24 @@ Set on each project (Settings → Environment Variables):
 
 Then add every frontend origin to the API's `CORS_ORIGINS` on Render and redeploy it.
 
+## InsForge Auth (migration phase 1)
+
+Sign-in moves to InsForge, which adds Google sign-in and emailed password
+resets. Nothing changes until these are set, so it can be switched on (or
+back off) without a code deploy.
+
+1. Create a **new** InsForge project for UnikaLove (not goodiesSnap's).
+2. In that project: enable email/password + **Google** OAuth, and add the user
+   app's URL (plus `/reset-password`) to the allowed redirect URLs.
+3. User app (Vercel): `NEXT_PUBLIC_INSFORGE_URL` = project API base URL,
+   `NEXT_PUBLIC_INSFORGE_ANON_KEY` = its anon key.
+4. API (Render): `INSFORGE_JWT_SECRET` = the project's JWT signing secret, so
+   the API accepts InsForge tokens. A user's first call creates their row,
+   keyed by the InsForge user id.
+
+Legacy accounts are not linked automatically: an existing email signing in
+through InsForge gets a 401 until the account-migration step runs.
+
 ## Security checklist before real users
 - [ ] Rotate `OPENROUTER_API_KEY` (it was shared in plaintext during development)
 - [ ] Never run `prisma/seed.ts` against production — demo passwords are in the public repo

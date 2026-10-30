@@ -17,6 +17,9 @@ const schema = z
     DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
     DIRECT_URL: z.string().min(1, 'DIRECT_URL is required'),
     JWT_ACCESS_SECRET: z.string().min(16, 'JWT_ACCESS_SECRET must be >= 16 chars'),
+    /// InsForge project JWT secret. When set, tokens InsForge Auth issues are
+    /// accepted and their first use provisions the user row.
+    INSFORGE_JWT_SECRET: z.string().min(16).optional(),
     APP_URL: z.string().url().default('http://localhost:3000'),
     /// Absolute base this API is reachable at — baked into stored photo URLs.
     PUBLIC_API_URL: z.string().url().optional(),

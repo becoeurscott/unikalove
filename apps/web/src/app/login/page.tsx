@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { warmUpApi } from '@/lib/api';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
+import { GoogleButton } from '@/components/GoogleButton';
+import { insforgeEnabled } from '@/lib/insforge';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -15,9 +17,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [justReset, setJustReset] = useState(false);
 
   // Wake the API while the form is being filled in — see warmUpApi.
-  useEffect(() => warmUpApi(), []);
+  useEffect(() => {
+    warmUpApi();
+    setJustReset(new URLSearchParams(window.location.search).has('reset'));
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,6 +53,11 @@ export default function LoginPage() {
           </h1>
           <p className="mt-1 text-sm text-gray-500">L&apos;amour n&apos;a pas de frontières</p>
         </div>
+        {justReset && (
+          <p className="mb-4 rounded-lg bg-green-50 p-3 text-center text-sm text-green-700">
+            Mot de passe modifié. Connectez-vous avec le nouveau.
+          </p>
+        )}
         <form onSubmit={onSubmit} className="space-y-4">
           <input
             type="email"
@@ -72,7 +83,17 @@ export default function LoginPage() {
           >
             {busy ? 'Connexion…' : 'Se connecter'}
           </button>
+          {insforgeEnabled && (
+            <p className="text-right text-sm">
+              <Link href="/forgot-password" className="text-brand">
+                Mot de passe oublié ?
+              </Link>
+            </p>
+          )}
         </form>
+        <div className="mt-3">
+          <GoogleButton onError={setError} />
+        </div>
         <p className="mt-6 text-center text-sm text-gray-500">
           Pas encore de compte ?{' '}
           <Link href="/register" className="font-semibold text-brand">

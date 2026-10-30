@@ -8,10 +8,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { warmUpApi } from '@/lib/api';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
-
-const OAUTH = [
-  { label: 'Continuer avec Google', classes: 'border border-gray-200 bg-white text-gray-700' },
-];
+import { GoogleButton } from '@/components/GoogleButton';
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -90,16 +87,7 @@ export default function RegisterPage() {
           </button>
         </form>
         <div className="mt-3 space-y-2">
-          {OAUTH.map((o) => (
-            <button
-              key={o.label}
-              disabled
-              title="Bientôt disponible"
-              className={`w-full rounded-lg py-2.5 text-sm font-medium opacity-60 ${o.classes}`}
-            >
-              {o.label}
-            </button>
-          ))}
+          <GoogleButton onError={setError} />
         </div>
         <p className="mt-6 text-center text-sm text-gray-500">
           Déjà un compte ?{' '}

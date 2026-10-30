@@ -1,3 +1,5 @@
+import { insforge, insforgeEnabled } from './insforge';
+
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 export const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'http://localhost:4000';
 
@@ -51,9 +53,15 @@ export class ApiError extends Error {
 let refreshing: Promise<string | null> | null = null;
 
 /** Rotates the refresh cookie into a new access token; null if session dead. */
-async function refreshToken(): Promise<string | null> {
+export async function refreshToken(): Promise<string | null> {
   refreshing ??= (async () => {
     try {
+      if (insforgeEnabled) {
+        const { data } = await insforge.auth.refreshSession();
+        const accessToken = data?.accessToken ?? null;
+        setToken(accessToken);
+        return accessToken;
+      }
       const res = await fetch(API_URL + '/auth/refresh', {
         method: 'POST',
         credentials: 'include',
