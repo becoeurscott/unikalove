@@ -45,7 +45,7 @@ export default function LoginPage() {
             <span className="text-brand-ink">Unika</span>
             <span className="text-brand">Love</span>
           </h1>
-          <p className="mt-1 text-sm text-gray-500">L&apos;amour n&apos;a pas de frontières</p>
+          <p className="mt-1 text-sm text-gray-500">L&apos;amour selon le cœur de Dieu</p>
         </div>
         <form onSubmit={onSubmit} className="space-y-4">
           <input

@@ -32,9 +32,9 @@ export function Step12Ready({ onEnter }: { onEnter: () => void }) {
         <Sparkles className="text-brand" size={28} />
       </motion.div>
 
-      <h1 className="text-2xl font-bold">Vos profils vous attendent</h1>
+      <h1 className="text-2xl font-bold">Dieu a quelqu'un pour vous</h1>
       <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
-        Votre profil est prêt. Voici quelques personnes sélectionnées pour vous.
+        Votre profil est prêt. Voici quelques frères et sœurs en Christ sélectionnés pour vous.
       </p>
 
       <div className="mt-7 flex justify-center gap-3">

@@ -17,6 +17,9 @@ export interface OnboardingDraft {
   smoking: string;
   drinking: string;
   religion: string;
+  denomination: string;
+  churchAttendance: string;
+  faithImportance: string;
   children: string;
   languages: string[];
   traits: string[];
@@ -35,6 +38,7 @@ export const EMPTY_DRAFT: OnboardingDraft = {
   displayName: '', birthDate: '', gender: '', city: '', country: '',
   intent: '', bio: '', photos: [], interests: [],
   education: '', occupation: '', smoking: '', drinking: '', religion: '',
+  denomination: '', churchAttendance: '', faithImportance: '',
   children: '', languages: [], traits: [],
   minAge: 21, maxAge: 45, maxDistanceKm: 100, genders: [],
   showDistance: true, showAge: true, discoverable: true,

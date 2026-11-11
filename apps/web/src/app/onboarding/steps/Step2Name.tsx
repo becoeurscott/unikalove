@@ -7,7 +7,7 @@ export function Step2Name({ draft, set }: StepProps) {
   const maxDob = new Date(Date.now() - 18 * 365.25 * 86_400_000).toISOString().slice(0, 10);
   return (
     <>
-      <StepHeader title="Comment vous appelez-vous ?" sub="C'est ce que les autres verront." />
+      <StepHeader title="Comment vous appelez-vous ?" sub="C'est ce que vos frères et sœurs en Christ verront." />
       <StepBody>
         <div className="space-y-4">
           <Field label="Prénom">

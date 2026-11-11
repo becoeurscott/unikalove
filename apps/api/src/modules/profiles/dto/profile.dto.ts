@@ -123,8 +123,26 @@ export class SubmitVerificationDto {
 }
 
 
-/** Screen 8 — lifestyle & personality. Every field optional: saved per screen. */
+/** Screen 8 — faith, lifestyle & personality. Every field optional: saved per screen. */
 export class LifestyleDto {
+  @ApiPropertyOptional({ description: 'Christian denomination' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  denomination?: string;
+
+  @ApiPropertyOptional({ description: 'Church attendance frequency' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  churchAttendance?: string;
+
+  @ApiPropertyOptional({ description: 'How important faith is to the user' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  faithImportance?: string;
+
   @ApiPropertyOptional({ minimum: 120, maximum: 230 })
   @IsOptional()
   @IsInt()
@@ -154,7 +172,7 @@ export class LifestyleDto {
   @IsIn(['never', 'socially', 'regularly'])
   drinking?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Legacy religion field; prefer denomination' })
   @IsOptional()
   @IsString()
   @MaxLength(60)

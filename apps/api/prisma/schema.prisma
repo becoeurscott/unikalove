@@ -151,13 +151,18 @@ model Profile {
   verified     Boolean   @default(false)
   completeness Int       @default(0)
 
+  // --- Faith (central to UnikaLove as a Christian dating app) ---
+  denomination     String?
+  churchAttendance String?
+  faithImportance  String?
+
   // --- Lifestyle & personality (onboarding screen 8) ---
   heightCm   Int?
   education  String?
   occupation String?
   smoking    String?   // never | socially | regularly
   drinking   String?   // never | socially | regularly
-  religion   String?
+  religion   String?   // kept for backward compat; new profiles use denomination
   children   String?   // have | want | none
   languages  String[]
   traits     String[]

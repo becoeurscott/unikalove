@@ -91,7 +91,7 @@ export class DiscoveryService {
 
     const rows = await this.prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT p.id, p."userId", p."displayName", p.city, p.verified, p.latitude, p.longitude,
-        p.bio, p.intent,
+        p.bio, p.intent, p.denomination, p."churchAttendance", p."faithImportance",
         (SELECT ph.url FROM "Photo" ph
           WHERE ph."profileId" = p.id AND ph."deletedAt" IS NULL
           ORDER BY ph.position LIMIT 1) AS photo,
@@ -124,23 +124,30 @@ export class DiscoveryService {
     `);
 
     const ranked = rows
-      .map((r) => ({
-        id: r.id,
-        userId: r.userId,
-        displayName: r.displayName,
-        city: r.city,
-        verified: r.verified,
-        bio: r.bio,
-        intent: r.intent,
-        photo: r.photo,
-        interests: r.interests ?? [],
-        age: r.age,
-        distanceKm: r.distance_km == null ? null : Math.round(Number(r.distance_km)),
-        sharedInterests: r.shared_interests,
-        score:
-          r.shared_interests * 10 +
-          (r.distance_km == null ? 0 : Math.max(0, 50 - Number(r.distance_km) / 10)),
-      }))
+      .map((r) => {
+        let faithBonus = 0;
+        if (me.denomination && r.denomination && me.denomination === r.denomination) faithBonus += 20;
+        if (me.faithImportance && r.faithImportance && me.faithImportance === r.faithImportance) faithBonus += 10;
+        if (me.churchAttendance && r.churchAttendance && me.churchAttendance === r.churchAttendance) faithBonus += 5;
+        return {
+          id: r.id,
+          userId: r.userId,
+          displayName: r.displayName,
+          city: r.city,
+          verified: r.verified,
+          bio: r.bio,
+          intent: r.intent,
+          photo: r.photo,
+          interests: r.interests ?? [],
+          age: r.age,
+          distanceKm: r.distance_km == null ? null : Math.round(Number(r.distance_km)),
+          sharedInterests: r.shared_interests,
+          score:
+            r.shared_interests * 10 +
+            (r.distance_km == null ? 0 : Math.max(0, 50 - Number(r.distance_km) / 10)) +
+            faithBonus,
+        };
+      })
       .filter((c) => c.distanceKm == null || c.distanceKm <= maxKm)
       .sort((a, b) => b.score - a.score);
 

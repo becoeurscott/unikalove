@@ -68,7 +68,7 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold">
             {greeting}, {me?.displayName ?? '…'} 👋
           </h1>
-          <p className="text-sm text-gray-500">Prêt(e) pour de belles rencontres ?</p>
+          <p className="text-sm text-gray-500">Que Dieu bénisse vos rencontres aujourd'hui</p>
         </div>
 
         <section>
@@ -204,7 +204,7 @@ export default function DashboardPage() {
             <h3 className="text-sm font-semibold">Conseils de sécurité</h3>
           </div>
           <p className="mt-2 text-xs text-gray-500">
-            Votre sécurité est notre priorité. Ne partagez jamais vos informations financières et
+            Votre sécurité est notre priorité. Restez vigilant(e), priez pour discernement, et
             signalez tout comportement suspect.
           </p>
         </section>

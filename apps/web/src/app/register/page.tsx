@@ -58,8 +58,8 @@ export default function RegisterPage() {
           <div className="mb-2 flex justify-center">
             <LogoMark size={84} />
           </div>
-          <h1 className="text-xl font-bold text-brand">Commencez votre histoire</h1>
-          <p className="mt-1 text-sm text-gray-500">Inscrivez-vous gratuitement</p>
+          <h1 className="text-xl font-bold text-brand">Trouvez l'amour en Christ</h1>
+          <p className="mt-1 text-sm text-gray-500">Rejoignez la communauté chrétienne — c'est gratuit</p>
         </div>
         <form onSubmit={onSubmit} className="space-y-3">
           <input

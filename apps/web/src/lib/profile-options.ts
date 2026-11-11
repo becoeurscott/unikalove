@@ -143,24 +143,34 @@ export const EDUCATION_LEVELS = [
   'Préfère ne pas dire',
 ];
 
-export const RELIGIONS = [
-  'Christianisme — Catholique',
-  'Christianisme — Protestant',
-  'Christianisme — Évangélique',
-  'Christianisme — Orthodoxe',
-  'Christianisme — Autre',
-  'Islam — Sunnite',
-  'Islam — Chiite',
-  'Islam — Autre',
-  'Judaïsme',
-  'Hindouisme',
-  'Bouddhisme',
-  'Religion traditionnelle africaine',
-  'Spirituel(le) sans religion',
-  'Agnostique',
-  'Athée',
+export const DENOMINATIONS = [
+  'Catholique',
+  'Protestant',
+  'Évangélique',
+  'Pentecôtiste',
+  'Orthodoxe',
+  'Baptiste',
+  'Méthodiste',
+  'Adventiste',
+  'Presbytérien',
+  'Église de réveil',
+  'Non-dénominationnel',
   'Autre',
-  'Préfère ne pas dire',
+];
+
+export const CHURCH_ATTENDANCE = [
+  'Chaque dimanche',
+  'Plusieurs fois par semaine',
+  'Quelques fois par mois',
+  'Occasionnellement',
+  'Rarement',
+];
+
+export const FAITH_IMPORTANCE = [
+  'Ma foi est au centre de ma vie',
+  'Très importante',
+  'Importante',
+  'En cheminement spirituel',
 ];
 
 export const LANGUAGES = [
@@ -191,22 +201,22 @@ export const LANGUAGES = [
 ];
 
 export const TRAITS = [
-  'Drôle',
+  'Homme/Femme de prière',
+  "Serviteur(e) dans l'église",
+  "Famille d'abord",
   'Ambitieux(se)',
-  'Calme',
-  'Aventurier(ère)',
   'Attentionné(e)',
+  'Généreux(se)',
+  'Calme',
+  'Drôle',
   'Créatif(ve)',
   'Sportif(ve)',
-  'Croyant(e)',
-  'Famille d’abord',
-  'Curieux(se)',
   'Sociable',
-  'Réservé(e)',
-  'Généreux(se)',
-  'Organisé(e)',
-  'Spontané(e)',
   'Optimiste',
+  'Patient(e)',
+  'Bienveillant(e)',
+  'Humble',
+  'Fidèle',
 ];
 
 /** Flattened for a SearchSelect, keeping the group as a searchable prefix. */

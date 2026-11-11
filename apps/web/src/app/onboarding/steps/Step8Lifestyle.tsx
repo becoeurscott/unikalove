@@ -1,10 +1,12 @@
 'use client';
 import { SearchSelect } from '@/components/SearchSelect';
 import {
+  CHURCH_ATTENDANCE,
+  DENOMINATIONS,
   EDUCATION_LEVELS,
+  FAITH_IMPORTANCE,
   LANGUAGES,
   OCCUPATION_OPTIONS,
-  RELIGIONS,
   TRAITS,
 } from '@/lib/profile-options';
 import { ChipMulti, ChoiceRow, Field, StepBody, StepHeader, StepNote, inputClass } from '../ui';
@@ -12,7 +14,6 @@ import type { StepProps } from '../types';
 
 const asOptions = (list: string[]) => list.map((v) => ({ value: v, label: v }));
 
-/** Every heading on this screen is centred like the questions above it. */
 function Group({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
@@ -26,11 +27,39 @@ export function Step8Lifestyle({ draft, set }: StepProps) {
   return (
     <>
       <StepHeader
-        title="Parlez-nous de votre quotidien"
-        sub="Tout est optionnel — mais chaque détail améliore vos suggestions."
+        title="Votre foi et votre quotidien"
+        sub="Partagez ce qui compte pour vous — cela aide à trouver quelqu'un qui partage vos valeurs."
       />
       <StepBody>
         <div className="space-y-5">
+          <Field label="Dénomination">
+            <SearchSelect
+              options={asOptions(DENOMINATIONS)}
+              value={draft.denomination}
+              onChange={(v) => set('denomination', v)}
+              placeholder="Choisissez votre dénomination"
+              searchPlaceholder="Rechercher…"
+            />
+          </Field>
+
+          <Group label="Fréquence de culte">
+            <ChoiceRow
+              columns={1}
+              value={draft.churchAttendance}
+              onChange={(v) => set('churchAttendance', v)}
+              options={asOptions(CHURCH_ATTENDANCE)}
+            />
+          </Group>
+
+          <Group label="Place de la foi dans votre vie">
+            <ChoiceRow
+              columns={1}
+              value={draft.faithImportance}
+              onChange={(v) => set('faithImportance', v)}
+              options={asOptions(FAITH_IMPORTANCE)}
+            />
+          </Group>
+
           <Field label="Profession">
             <SearchSelect
               options={OCCUPATION_OPTIONS}
@@ -47,16 +76,6 @@ export function Step8Lifestyle({ draft, set }: StepProps) {
               value={draft.education}
               onChange={(v) => set('education', v)}
               placeholder="Choisissez un niveau"
-              searchPlaceholder="Rechercher…"
-            />
-          </Field>
-
-          <Field label="Religion">
-            <SearchSelect
-              options={asOptions(RELIGIONS)}
-              value={draft.religion}
-              onChange={(v) => set('religion', v)}
-              placeholder="Choisissez une option"
               searchPlaceholder="Rechercher…"
             />
           </Field>
@@ -121,7 +140,7 @@ export function Step8Lifestyle({ draft, set }: StepProps) {
             />
           </Group>
 
-          <Group label="Trois mots qui vous décrivent">
+          <Group label="Ce qui vous décrit le mieux">
             <ChipMulti
               max={3}
               values={draft.traits}
@@ -132,8 +151,8 @@ export function Step8Lifestyle({ draft, set }: StepProps) {
         </div>
 
         <StepNote>
-          Ces informations apparaissent sur votre profil. Vous pouvez en masquer une partie plus
-          tard depuis vos réglages.
+          Ces informations apparaissent sur votre profil et aident à vous connecter avec des
+          chrétiens qui partagent vos valeurs.
         </StepNote>
       </StepBody>
     </>
